@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Academia Pró — Painel do Professor</title>
+<style>
+  :root {
+    --paper: #FBFAF6;
+    --paper-line: #E4DFD2;
+    --ink: #22302C;
+    --ink-soft: #5B655F;
+    --primary: #2B5D56;
+    --primary-dark: #1D423C;
+    --sage: #4C7A52; --sage-bg: #E7EFE3;
+    --amber: #A9700E; --amber-bg: #F6E9CF;
+    --rust: #A24230; --rust-bg: #F4E1DA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 32px 24px 64px;
+  }
+  h1, h2, h3, h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; }
+
+  .cabecalho-app {
+    max-width: 1080px; margin: 0 auto 28px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 2px solid var(--ink); padding-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  }
+  .cabecalho-app h1 { font-size: 28px; letter-spacing: -0.01em; }
+  .cabecalho-app p { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+  .cabecalho-direita { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .data-hoje { font-size: 13px; color: var(--ink-soft); }
+
+  .faixa-status {
+    max-width: 1080px; margin: 0 auto 16px; font-size: 13px;
+    padding: 10px 14px; border-radius: 4px;
+  }
+  .faixa-erro { background: var(--rust-bg); color: var(--rust); }
+  .faixa-ok { background: var(--sage-bg); color: var(--sage); }
+  .oculto { display: none !important; }
+
+  .grade-painel {
+    max-width: 1080px; margin: 0 auto 32px;
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px;
+  }
+  @media (max-width: 760px) { .grade-painel { grid-template-columns: 1fr; } }
+
+  .cartao { background: #fff; border: 1px solid var(--paper-line); border-radius: 4px; padding: 20px 22px; }
+  .cartao h2 { font-size: 17px; margin-bottom: 16px; }
+
+  .contagem-linha { margin-bottom: 14px; }
+  .contagem-linha:last-child { margin-bottom: 0; }
+  .contagem-topo { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .contagem-numero { font-weight: 600; }
+  .contagem-trilho { height: 8px; background: #EEEAE0; border-radius: 99px; overflow: hidden; }
+  .contagem-preenchido { height: 100%; border-radius: 99px; }
+
+  .resumo-total { display: flex; align-items: baseline; gap: 8px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed var(--paper-line); }
+  .resumo-total .num { font-family: Georgia, serif; font-size: 34px; color: var(--primary); }
+  .resumo-total .rotulo { font-size: 13px; color: var(--ink-soft); }
+
+  .linha-turma { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--paper-line); }
+  .linha-turma:last-child { border-bottom: none; }
+
+  .barra-filtros { max-width: 1080px; margin: 0 auto 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .barra-filtros input, .barra-filtros select {
+    font: inherit; font-size: 13.5px; padding: 9px 12px;
+    border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: var(--ink);
+  }
+  .barra-filtros input { flex: 1; min-width: 200px; }
+
+  .lista-alunos { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+  .prancheta { position: relative; background: #fff; border: 1px solid var(--paper-line); border-radius: 6px; padding: 22px 24px 18px; }
+  .prancheta-clipe { position: absolute; top: -9px; left: 28px; width: 46px; height: 16px; background: var(--primary); border-radius: 3px; }
+  .prancheta-cabecalho { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .prancheta-titulo { flex: 1; min-width: 180px; }
+  .prancheta-titulo h3 { font-size: 16.5px; }
+  .prancheta-sub { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+
+  .botao-lembrete, .botao-primario {
+    font: inherit; font-size: 13px; font-weight: 600; background: var(--primary); color: #fff;
+    border: none; border-radius: 4px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
+  }
+  .botao-lembrete:hover, .botao-primario:hover { background: var(--primary-dark); }
+  .botao-excluir {
+    font: inherit; font-size: 12.5px; background: none; color: var(--rust);
+    border: 1px solid #E7C6BB; border-radius: 4px; padding: 9px 12px; cursor: pointer;
+  }
+  .botao-excluir:hover { background: var(--rust-bg); }
+  .selo-inadimplente {
+    font-size: 11px; font-weight: 700; background: var(--rust-bg); color: var(--rust);
+    padding: 3px 9px; border-radius: 99px; margin-left: 6px; vertical-align: middle;
+  }
+  .botao-inadimplente {
+    font: inherit; font-size: 12.5px; font-weight: 600; background: none; color: var(--rust);
+    border: 1px solid #E7C6BB; border-radius: 4px; padding: 9px 12px; cursor: pointer;
+  }
+  .botao-inadimplente:hover { background: var(--rust-bg); }
+  .botao-regularizar {
+    font: inherit; font-size: 12.5px; font-weight: 600; background: var(--sage); color: #fff;
+    border: none; border-radius: 4px; padding: 9px 12px; cursor: pointer;
+  }
+  .botao-restaurar {
+    font: inherit; font-size: 12.5px; background: none; border: 1px solid var(--paper-line);
+    border-radius: 4px; padding: 7px 12px; cursor: pointer; color: var(--ink-soft);
+  }
+
+  .prancheta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .selo { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid transparent; }
+  .selo-neutro { background: #F0EEE7; color: var(--ink-soft); }
+  .selo-atencao { background: var(--rust-bg); color: var(--rust); border-color: #E7C6BB; }
+
+  .prancheta-suplemento { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; }
+
+  table.tabela-exercicios { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .tabela-exercicios th { text-align: left; font-weight: 600; color: var(--ink-soft); font-size: 11.5px; padding: 6px 8px; border-bottom: 1px solid var(--paper-line); }
+  .tabela-exercicios td { padding: 8px 8px; border-bottom: 1px solid var(--paper-line); }
+  .tabela-exercicios tr:last-child td { border-bottom: none; }
+  .col-data { color: var(--ink-soft); width: 70px; }
+  .status-select { font: inherit; font-size: 12.5px; font-weight: 600; border: none; border-radius: 4px; padding: 5px 9px; cursor: pointer; }
+
+  .botao-adicionar-exercicio {
+    font: inherit; font-size: 12.5px; background: none; border: 1px dashed var(--paper-line);
+    border-radius: 4px; padding: 7px 12px; cursor: pointer; color: var(--ink-soft); margin-top: 10px;
+  }
+  .mini-form-exercicio { display: none; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .mini-form-exercicio.aberto { display: flex; }
+  .mini-form-exercicio input { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--paper-line); border-radius: 4px; flex: 1; min-width: 140px; }
+
+  .sobreposicao {
+    position: fixed; inset: 0; background: rgba(34,48,44,0.4);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+  }
+  .sobreposicao.aberta { display: flex; }
+  .painel-modal { background: #fff; border-radius: 6px; max-width: 420px; width: 100%; padding: 22px 24px; }
+  .painel-topo { display: flex; justify-content: space-between; align-items: flex-start; }
+  .painel-topo h4 { font-size: 17px; }
+  .fechar { background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-soft); }
+  .painel-legenda { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 14px; }
+  .mensagem-preview { background: var(--paper); border: 1px solid var(--paper-line); border-radius: 4px; padding: 14px; font-size: 13.5px; line-height: 1.5; margin-bottom: 16px; }
+  .painel-rodape { display: flex; justify-content: flex-end; }
+  .confirmacao { font-size: 13.5px; color: var(--sage); font-weight: 600; }
+
+  .campo-form { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .campo-form label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .campo-form input { font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; }
+  .campo-form input:disabled { background: var(--paper); color: var(--ink-soft); }
+  .campo-form-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .erro-form { font-size: 12.5px; color: var(--rust); margin: -4px 0 10px; }
+
+  /* --------- login --------- */
+  .tela-login {
+    position: fixed; inset: 0; background: var(--paper);
+    display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+  }
+  .tela-login.oculto { display: none; }
+  .cartao-login { background: #fff; border: 1px solid var(--paper-line); border-radius: 6px; padding: 32px 28px; max-width: 340px; width: 100%; }
+  .cartao-login h1 { font-size: 22px; margin-bottom: 4px; }
+  .cartao-login p.legenda-login { font-size: 13px; color: var(--ink-soft); margin: 0 0 20px; }
+  .cartao-login .dica-login { font-size: 12px; color: var(--ink-soft); margin-top: 14px; border-top: 1px dashed var(--paper-line); padding-top: 12px; }
+  #appConteudo.oculto { display: none; }
+  .botao-sair {
+    font: inherit; font-size: 12.5px; background: none; border: 1px solid var(--paper-line);
+    border-radius: 4px; padding: 7px 12px; cursor: pointer; color: var(--ink-soft);
+  }
+  .cabecalho-usuario { font-size: 13px; color: var(--ink-soft); }
+
+  /* --------- botões extras nas fichas --------- */
+  .botao-notificar {
+    font: inherit; font-size: 11.5px; font-weight: 600; background: var(--amber-bg); color: var(--amber);
+    border: none; border-radius: 4px; padding: 4px 9px; cursor: pointer; white-space: nowrap;
+  }
+  .botao-chat {
+    font: inherit; font-size: 13px; font-weight: 600; background: none; color: var(--primary);
+    border: 1px solid var(--primary); border-radius: 4px; padding: 8px 13px; cursor: pointer; white-space: nowrap;
+  }
+  .botao-chat:hover { background: var(--sage-bg); }
+  .botao-whatsapp {
+    font: inherit; font-size: 13px; font-weight: 600; background: #25D366; color: #fff;
+    border: none; border-radius: 4px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
+  }
+  .botao-whatsapp:hover { background: #1DA851; }
+  .tabela-exercicios td.col-acao { width: 90px; text-align: right; }
+
+  /* --------- chat --------- */
+  .painel-chat { background: #fff; border-radius: 6px; max-width: 440px; width: 100%; padding: 20px 22px; display: flex; flex-direction: column; max-height: 80vh; }
+  .chat-mensagens { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; padding-right: 4px; min-height: 120px; max-height: 320px; }
+  .chat-bolha { max-width: 80%; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.4; }
+  .chat-bolha-professor { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 2px; }
+  .chat-bolha-sistema { align-self: center; background: var(--paper); color: var(--ink-soft); font-size: 12px; border: 1px dashed var(--paper-line); }
+  .chat-hora { display: block; font-size: 10.5px; opacity: 0.75; margin-top: 3px; }
+  .chat-vazio { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 20px 0; }
+  .chat-form { display: flex; gap: 8px; border-top: 1px solid var(--paper-line); padding-top: 12px; }
+  .chat-form textarea {
+    flex: 1; font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line);
+    border-radius: 4px; resize: none; min-height: 40px;
+  }
+
+  /* --------- navegação entre telas --------- */
+  .nav-telas { max-width: 1080px; margin: 0 auto 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .botao-nav {
+    font: inherit; font-size: 13.5px; font-weight: 600; background: none; color: var(--ink-soft);
+    border: 1px solid var(--paper-line); border-radius: 99px; padding: 9px 18px; cursor: pointer;
+  }
+  .botao-nav.ativo { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .tela.oculto { display: none; }
+
+  /* --------- cardápio --------- */
+  .aviso-cardapio { max-width: 1080px; margin: 0 auto 18px; font-size: 13px; color: var(--ink-soft); background: var(--amber-bg); border-color: #EBD9AE; }
+  .nav-cardapio { max-width: 1080px; margin: 0 auto 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .botao-nav-cardapio {
+    font: inherit; font-size: 12.5px; font-weight: 600; background: #fff; color: var(--ink-soft);
+    border: 1px solid var(--paper-line); border-radius: 6px; padding: 8px 14px; cursor: pointer;
+  }
+  .botao-nav-cardapio.ativo { background: var(--sage-bg); color: var(--sage); border-color: #C9DCC4; }
+  .cartao-cardapio { max-width: 1080px; margin: 0 auto; }
+  .cardapio-principios { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
+  .cardapio-refeicoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .refeicao-card { border: 1px solid var(--paper-line); border-radius: 6px; padding: 14px 16px; }
+  .refeicao-card h4 { font-size: 13px; color: var(--primary); margin-bottom: 8px; }
+  .refeicao-card ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--ink); }
+  .cardapio-rodape { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cardapio-rodape select {
+    font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px;
+  }
+
+  /* --------- check-in --------- */
+  .qrcode-geral-card { max-width: 1080px; margin: 0 auto 18px; text-align: center; }
+  .cartao-recepcao { max-width: 1080px; margin: 0 auto 18px; }
+  .qrcode-geral-card img { width: 220px; height: 220px; margin: 10px 0; }
+  .qrcode-geral-legenda { font-size: 12px; color: var(--ink-soft); word-break: break-all; }
+  .checkin-lista { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; text-align: left; margin-top: 4px; }
+  .checkin-item {
+    font: inherit; font-size: 14px; text-align: left; background: var(--paper); border: 1px solid var(--paper-line);
+    border-radius: 4px; padding: 10px 12px; cursor: pointer; color: var(--ink);
+  }
+  .checkin-item:hover { background: var(--sage-bg); border-color: #C9DCC4; }
+  .presenca-linha { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--paper-line); }
+  .presenca-linha:last-child { border-bottom: none; }
+
+  /* --------- financeiro --------- */
+  .grade-financeiro { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 760px) { .grade-financeiro { grid-template-columns: 1fr; } }
+  .botao-importar-ofx { display: inline-flex; align-items: center; cursor: pointer; }
+  .cartao-financeiro { max-width: 1080px; margin: 0 auto 18px; }
+  .linha-lancamento {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    font-size: 13.5px; padding: 10px 0; border-bottom: 1px solid var(--paper-line);
+  }
+  .linha-lancamento:last-child { border-bottom: none; }
+  .linha-lancamento .desc { flex: 1; }
+  .linha-lancamento .desc small { display: block; color: var(--ink-soft); font-size: 11.5px; }
+  .valor-receita { color: var(--sage); font-weight: 600; }
+  .valor-despesa { color: var(--rust); font-weight: 600; }
+  .botao-alternar-status {
+    font: inherit; font-size: 11.5px; font-weight: 600; border: none; border-radius: 4px;
+    padding: 5px 9px; cursor: pointer;
+  }
+  .botao-alternar-status.pendente { background: var(--amber-bg); color: var(--amber); }
+  .botao-alternar-status.pago { background: var(--sage-bg); color: var(--sage); }
+  .botao-excluir-lancamento { background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 16px; line-height: 1; }
+  .botao-editar-lancamento {
+    font: inherit; font-size: 11.5px; font-weight: 600; background: none; color: var(--primary);
+    border: 1px solid var(--primary); border-radius: 4px; padding: 5px 9px; cursor: pointer;
+  }
+  .painel-modal-largo { max-width: 640px; }
+  .previa-ofx { max-height: 340px; overflow-y: auto; margin: 10px 0 16px; }
+  .previa-ofx table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .previa-ofx th { text-align: left; color: var(--ink-soft); font-size: 11px; padding: 5px; border-bottom: 1px solid var(--paper-line); }
+  .previa-ofx td { padding: 6px 5px; border-bottom: 1px solid var(--paper-line); }
+  .previa-ofx select { font: inherit; font-size: 12px; padding: 4px; border: 1px solid var(--paper-line); border-radius: 4px; }
+  .linha-recorrente {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    font-size: 13.5px; padding: 10px 0; border-bottom: 1px solid var(--paper-line);
+  }
+  .linha-recorrente:last-child { border-bottom: none; }
+  .linha-recorrente.inativo { opacity: 0.5; }
+  .selo-inativo { font-size: 11px; background: #F0EEE7; color: var(--ink-soft); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+  <!-- Tela de login -->
+  <div class="tela-login" id="telaLogin">
+    <div class="cartao-login">
+      <h1>Academia Pró</h1>
+      <p class="legenda-login">Acesso restrito à equipe de professores</p>
+      <div class="campo-form">
+        <label>E-mail</label>
+        <input id="loginUsuario" type="email" placeholder="seuemail@academia.com" />
+      </div>
+      <div class="campo-form">
+        <label>Senha</label>
+        <input id="loginSenha" type="password" placeholder="Sua senha" />
+      </div>
+      <p class="erro-form oculto" id="erroLogin"></p>
+      <button class="botao-primario" id="btnEntrar" style="width:100%">Entrar</button>
+      <p class="dica-login">As contas de acesso são criadas pelo administrador no Firebase Console (Authentication → Users). Fale com o admin da academia caso ainda não tenha um e-mail e senha cadastrados.</p>
+    </div>
+  </div>
+
+  <!-- Tela de confirmação de check-in (aluno escaneia o QR geral, sem precisar de login) -->
+  <div class="tela-login oculto" id="telaConfirmacaoCheckin">
+    <div class="cartao-login" style="text-align:center; max-width:400px;">
+      <h1 id="checkinTitulo">Check-in Academia Pró</h1>
+      <p class="legenda-login" id="checkinMensagem"></p>
+      <div class="campo-form" id="checkinBuscaWrap" style="text-align:left;">
+        <input id="checkinBusca" placeholder="Buscar seu nome..." />
+      </div>
+      <div class="checkin-lista" id="checkinListaAlunos"></div>
+    </div>
+  </div>
+
+  <div id="appConteudo" class="oculto">
+
+  <div class="cabecalho-app">
+    <div>
+      <h1>Academia Pró — Painel do Professor</h1>
+      <p>Acompanhamento de treinos, fichas de alunos e lembretes</p>
+    </div>
+    <div class="cabecalho-direita">
+      <span class="cabecalho-usuario" id="usuarioLogado"></span>
+      <span class="data-hoje" id="dataHoje"></span>
+      <div style="display:flex; gap:8px;">
+        <button class="botao-primario" id="btnAtualizarSistema">Atualizar sistema</button>
+        <button class="botao-restaurar" id="btnRestaurar">Restaurar dados de exemplo</button>
+        <button class="botao-sair" id="btnSair">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="faixaStatus" class="faixa-status oculto"></div>
+
+  <nav class="nav-telas">
+    <button class="botao-nav ativo" data-tela="telaPainel">Painel (pendências)</button>
+    <button class="botao-nav" data-tela="telaAlunos">Alunos</button>
+    <button class="botao-nav" data-tela="telaCardapio">Sugestão alimentar</button>
+    <button class="botao-nav" data-tela="telaCheckin">Check-in</button>
+    <button class="botao-nav" data-tela="telaFinanceiro">Financeiro</button>
+  </nav>
+
+  <!-- ===================== TELA: PAINEL (só pendências) ===================== -->
+  <div class="tela" id="telaPainel">
+    <div class="cartao cartao-pendencias">
+      <h2>Central de pendências</h2>
+      <div class="resumo-total">
+        <span class="num" id="totalPendencias">0</span>
+        <span class="rotulo">exercícios pendentes no momento</span>
+      </div>
+      <div id="listaPendencias"></div>
+    </div>
+  </div>
+
+  <!-- ===================== TELA: ALUNOS ===================== -->
+  <div class="tela oculto" id="telaAlunos">
+
+  <div class="grade-painel">
+    <div class="cartao">
+      <h2>Exercícios da semana</h2>
+      <div class="resumo-total">
+        <span class="num" id="totalGeral">0</span>
+        <span class="rotulo">exercícios registrados no total</span>
+      </div>
+      <div class="contagem-linha">
+        <div class="contagem-topo"><span>Realizados</span><span class="contagem-numero" id="numRealizado">0</span></div>
+        <div class="contagem-trilho"><div class="contagem-preenchido" id="barraRealizado" style="background:var(--sage)"></div></div>
+      </div>
+      <div class="contagem-linha">
+        <div class="contagem-topo"><span>A realizar</span><span class="contagem-numero" id="numARealizar">0</span></div>
+        <div class="contagem-trilho"><div class="contagem-preenchido" id="barraARealizar" style="background:var(--amber)"></div></div>
+      </div>
+      <div class="contagem-linha">
+        <div class="contagem-topo"><span>Pendentes</span><span class="contagem-numero" id="numPendente">0</span></div>
+        <div class="contagem-trilho"><div class="contagem-preenchido" id="barraPendente" style="background:var(--rust)"></div></div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <h2>Alunos por faixa etária</h2>
+      <div id="listaFaixas"></div>
+    </div>
+  </div>
+
+  <div class="barra-filtros">
+    <input id="campoBusca" placeholder="Buscar aluno pelo nome..." />
+    <select id="filtroFaixa"></select>
+    <button class="botao-primario" id="btnAbrirCadastro">+ Cadastrar aluno</button>
+  </div>
+
+  <div class="lista-alunos" id="listaAlunos"></div>
+
+  </div><!-- fim telaAlunos -->
+
+  <!-- ===================== TELA: CARDÁPIO ===================== -->
+  <div class="tela oculto" id="telaCardapio">
+    <div class="cartao aviso-cardapio">
+      <strong>Aviso importante:</strong> estas sugestões alimentares são orientações gerais de alimentação saudável, baseadas em diretrizes públicas (Guia Alimentar da População Brasileira, Sociedade Brasileira de Cardiologia, Sociedade Brasileira de Diabetes). Elas não substituem uma avaliação individual — principalmente para alunos com comorbidades, a prescrição final deve ser sempre revisada por um nutricionista ou médico.
+    </div>
+
+    <nav class="nav-cardapio">
+      <button class="botao-nav-cardapio ativo" data-cardapio="jovens">Jovens e adultos</button>
+      <button class="botao-nav-cardapio" data-cardapio="idosos">3ª idade</button>
+      <button class="botao-nav-cardapio" data-cardapio="hipertensao">Hipertensão</button>
+      <button class="botao-nav-cardapio" data-cardapio="diabetes">Diabetes tipo 2</button>
+      <button class="botao-nav-cardapio" data-cardapio="osteoartrose">Osteoporose / Artrose</button>
+    </nav>
+
+    <div id="conteudoCardapio"></div>
+  </div>
+
+  <!-- ===================== TELA: CHECK-IN ===================== -->
+  <div class="tela oculto" id="telaCheckin">
+    <div class="cartao cartao-recepcao">
+      <h2>Check-in pela recepção</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Deixe este painel aberto e logado num tablet ou celular na recepção. O aluno chega e toca no próprio nome aqui — sem precisar de QR Code nem internet do celular dele.</p>
+      <div class="campo-form" style="margin-top:10px;">
+        <input id="recepcaoBusca" placeholder="Buscar nome do aluno..." />
+      </div>
+      <div class="checkin-lista" id="recepcaoListaAlunos" style="max-height:320px;"></div>
+    </div>
+
+    <div class="cartao">
+      <h2>Presenças de hoje</h2>
+      <div id="listaPresencasHoje"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Registro de presenças por aluno</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Histórico completo de check-ins, não só o de hoje.</p>
+      <div class="barra-filtros" style="margin:10px 0 14px;">
+        <select id="registroFiltroAluno"><option value="">Todos os alunos</option></select>
+        <button class="botao-restaurar" id="btnCarregarRegistro">Carregar registro</button>
+      </div>
+      <div id="listaRegistroPresencas"></div>
+    </div>
+
+    <div class="cartao aviso-cardapio">
+      <strong>Alternativa: QR Code para o celular do próprio aluno.</strong> Funciona bem na maioria das redes, mas depende do celular do aluno conseguir acessar o Firestore — em redes mais restritivas (wi-fi de shopping, empresa, etc.) pode não carregar. Use o check-in pela recepção acima como principal.
+    </div>
+
+    <div class="cartao qrcode-geral-card">
+      <h2>QR Code de check-in da academia</h2>
+      <img id="qrGeralImagem" alt="QR Code geral de check-in" />
+      <p class="qrcode-geral-legenda" id="linkCheckinGeral"></p>
+    </div>
+  </div>
+
+  <!-- ===================== TELA: FINANCEIRO ===================== -->
+  <div class="tela oculto" id="telaFinanceiro">
+
+    <div class="grade-painel grade-financeiro">
+      <div class="cartao">
+        <h2>Saldo atual</h2>
+        <div class="resumo-total"><span class="num" id="finSaldo">R$ 0,00</span></div>
+      </div>
+      <div class="cartao">
+        <h2>A receber (pendente)</h2>
+        <div class="resumo-total"><span class="num" id="finAReceber" style="color:var(--sage)">R$ 0,00</span></div>
+      </div>
+      <div class="cartao">
+        <h2>A pagar (pendente)</h2>
+        <div class="resumo-total"><span class="num" id="finAPagar" style="color:var(--rust)">R$ 0,00</span></div>
+      </div>
+    </div>
+
+    <div class="barra-filtros">
+      <button class="botao-primario" id="btnNovoLancamento">+ Novo lançamento</button>
+      <label class="botao-restaurar botao-importar-ofx">
+        Importar arquivo .OFX
+        <input type="file" id="inputOfx" accept=".ofx" style="display:none" />
+      </label>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Gastos recorrentes (água, luz, internet, etc.)</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Cadastre uma vez; todo mês é só gerar os lançamentos pendentes com um clique.</p>
+      <div class="barra-filtros" style="margin:0 0 14px;">
+        <button class="botao-primario" id="btnNovoRecorrente">+ Novo gasto recorrente</button>
+        <button class="botao-restaurar" id="btnGerarRecorrentes">Gerar lançamentos deste mês</button>
+      </div>
+      <div id="listaRecorrentes"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Contas a receber</h2>
+      <div id="listaAReceber"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Contas a pagar</h2>
+      <div id="listaAPagar"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Fluxo de caixa (lançamentos já realizados)</h2>
+      <div id="listaFluxoCaixa"></div>
+    </div>
+
+  </div>
+
+  <!-- Modal: lembrete -->
+  <div class="sobreposicao" id="modalLembrete">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4 id="tituloLembrete">Enviar lembrete</h4>
+        <button class="fechar" data-fechar-modal="modalLembrete">×</button>
+      </div>
+      <p class="painel-legenda">Pré-visualização da mensagem — será enviada ao mesmo tempo pelo chat interno e pelo WhatsApp cadastrado do aluno</p>
+      <div class="mensagem-preview" id="mensagemLembrete"></div>
+      <div class="painel-rodape" id="rodapeLembrete"></div>
+    </div>
+  </div>
+
+  <!-- Modal: cadastro -->
+  <div class="sobreposicao" id="modalCadastro">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4 id="tituloModalCadastro">Cadastrar novo aluno</h4>
+        <button class="fechar" data-fechar-modal="modalCadastro">×</button>
+      </div>
+      <p class="painel-legenda">A faixa etária é calculada automaticamente pela idade</p>
+
+      <div class="campo-form">
+        <label>Nome completo</label>
+        <input id="formNome" placeholder="Nome do aluno" />
+      </div>
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>Idade</label>
+          <input id="formIdade" type="number" min="0" placeholder="Ex: 34" />
+        </div>
+        <div class="campo-form">
+          <label>Faixa etária</label>
+          <input id="formFaixaCalculada" disabled value="—" />
+        </div>
+      </div>
+      <div class="campo-form">
+        <label>Professor(a) responsável</label>
+        <input id="formProfessor" placeholder="Nome do professor" />
+      </div>
+      <div class="campo-form">
+        <label>WhatsApp do aluno (com DDI e DDD, só números)</label>
+        <input id="formTelefone" placeholder="Ex: 5562988887777" />
+      </div>
+      <div class="campo-form">
+        <label>Comorbidades (separadas por vírgula)</label>
+        <input id="formComorbidades" placeholder="Ex: Hipertensão, Diabetes tipo 2" />
+      </div>
+      <div class="campo-form">
+        <label>Suplementação prescrita</label>
+        <input id="formSuplementacao" placeholder="Ex: Whey isolado, 20g pós-treino" />
+      </div>
+
+      <p class="erro-form oculto" id="erroCadastro"></p>
+
+      <div class="painel-rodape">
+        <button class="botao-primario" id="btnSalvarCadastro">Cadastrar aluno</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: chat -->
+  <div class="sobreposicao" id="modalChat">
+    <div class="painel-chat">
+      <div class="painel-topo">
+        <h4 id="tituloChat">Chat</h4>
+        <button class="fechar" data-fechar-modal="modalChat">×</button>
+      </div>
+      <p class="painel-legenda">Mensagens enviadas pelo sistema para o aluno</p>
+      <div class="chat-mensagens" id="chatMensagens"></div>
+      <div class="chat-form">
+        <textarea id="chatTexto" placeholder="Escreva uma mensagem..."></textarea>
+        <button class="botao-primario" id="btnEnviarChat">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: novo lançamento financeiro -->
+  <div class="sobreposicao" id="modalLancamento">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4 id="tituloModalLancamento">Novo lançamento</h4>
+        <button class="fechar" data-fechar-modal="modalLancamento">×</button>
+      </div>
+
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>Tipo</label>
+          <select id="lancTipo">
+            <option value="receita">Receita (a receber)</option>
+            <option value="despesa">Despesa (a pagar)</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <label>Status</label>
+          <select id="lancStatus">
+            <option value="pendente">Pendente</option>
+            <option value="pago">Já pago/recebido</option>
+          </select>
+        </div>
+      </div>
+      <div class="campo-form">
+        <label>Descrição</label>
+        <input id="lancDescricao" placeholder="Ex: Mensalidade de setembro" />
+      </div>
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>Valor (R$)</label>
+          <input id="lancValor" type="number" min="0" step="0.01" placeholder="Ex: 150.00" />
+        </div>
+        <div class="campo-form">
+          <label>Data</label>
+          <input id="lancData" type="date" />
+        </div>
+      </div>
+      <div class="campo-form">
+        <label>Vincular a um aluno (opcional)</label>
+        <select id="lancAluno"><option value="">Nenhum</option></select>
+      </div>
+      <div class="campo-form">
+        <label>Centro de custo</label>
+        <select id="lancCentroCusto"></select>
+      </div>
+
+      <p class="erro-form oculto" id="erroLancamento"></p>
+
+      <div class="painel-rodape">
+        <button class="botao-primario" id="btnSalvarLancamento">Salvar lançamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: importar OFX -->
+  <div class="sobreposicao" id="modalOfx">
+    <div class="painel-modal painel-modal-largo">
+      <div class="painel-topo">
+        <h4>Importar extrato .OFX</h4>
+        <button class="fechar" data-fechar-modal="modalOfx">×</button>
+      </div>
+      <p class="painel-legenda">Confira os lançamentos identificados no arquivo. Associe cada um a um aluno quando fizer sentido antes de confirmar.</p>
+      <div id="previaOfx" class="previa-ofx"></div>
+      <div class="painel-rodape">
+        <button class="botao-primario" id="btnConfirmarOfx">Confirmar importação</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: gasto recorrente -->
+  <div class="sobreposicao" id="modalRecorrente">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4 id="tituloModalRecorrente">Novo gasto recorrente</h4>
+        <button class="fechar" data-fechar-modal="modalRecorrente">×</button>
+      </div>
+      <p class="painel-legenda">Ex: Água, Energia elétrica, Internet — lançado automaticamente todo mês</p>
+
+      <div class="campo-form">
+        <label>Descrição</label>
+        <input id="recDescricao" placeholder="Ex: Conta de água" />
+      </div>
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>Valor médio (R$)</label>
+          <input id="recValor" type="number" min="0" step="0.01" placeholder="Ex: 120.00" />
+        </div>
+        <div class="campo-form">
+          <label>Dia de vencimento</label>
+          <input id="recDiaVencimento" type="number" min="1" max="31" placeholder="Ex: 10" />
+        </div>
+      </div>
+      <div class="campo-form">
+        <label>Centro de custo</label>
+        <select id="recCentroCusto"></select>
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; margin-bottom:14px;">
+        <input type="checkbox" id="recAtivo" checked style="width:auto;" /> Ativo (gerar lançamento todo mês)
+      </label>
+
+      <p class="erro-form oculto" id="erroRecorrente"></p>
+
+      <div class="painel-rodape">
+        <button class="botao-primario" id="btnSalvarRecorrente">Salvar gasto recorrente</button>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- fim #appConteudo -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  initializeFirestore, collection, doc, getDocs, getDocsFromServer, addDoc, onSnapshot,
+  query, where, writeBatch,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+/* ==================================================================
+   ACADEMIA PRÓ — agora com Firebase (Firestore + Authentication).
+   Os dados ficam num banco compartilhado na nuvem: qualquer aparelho
+   logado vê e atualiza as mesmas informações em tempo real (inclusive
+   o check-in por QR Code, feito do celular do próprio aluno).
+
+   Contas de acesso (login) são criadas no Firebase Console em
+   Authentication → Users → Add user (e-mail + senha).
+   ================================================================== */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB09eKMw8KnhDmoUhL7qL3LZO_ythpLZ9Y",
+  authDomain: "dacademia-7eed3.firebaseapp.com",
+  projectId: "dacademia-7eed3",
+  storageBucket: "dacademia-7eed3.firebasestorage.app",
+  messagingSenderId: "58802700111",
+  appId: "1:58802700111:web:f8909ca409433edcc1cf3a",
+  measurementId: "G-E7KS14QDEZ",
+};
+
+const appFirebase = initializeApp(firebaseConfig);
+// experimentalAutoDetectLongPolling: contorna redes/roteadores/firewalls que
+// bloqueiam a conexão "streaming" padrão do Firestore (causa do erro "unavailable").
+const db = initializeFirestore(appFirebase, { experimentalAutoDetectLongPolling: true });
+const auth = getAuth(appFirebase);
+
+const colAlunos = collection(db, "alunos");
+
+/* ------------------------------------------------------------------
+   Check-in público (QR, sem login) via API REST do Firestore, em vez
+   do SDK. O SDK usa uma conexão "streaming" contínua que, nos testes,
+   ficou travando silenciosamente em alguns aparelhos/redes sem nunca
+   dar erro nem sucesso. A API REST é uma chamada HTTP comum (a mesma
+   base de qualquer site), bem mais dificil de travar dessa forma.
+   Continua respeitando as mesmas regras de segurança do Firestore.
+   ------------------------------------------------------------------ */
+
+function extrairValorFirestoreRest(valor) {
+  if (!valor) return null;
+  if (valor.stringValue !== undefined) return valor.stringValue;
+  if (valor.integerValue !== undefined) return Number(valor.integerValue);
+  if (valor.doubleValue !== undefined) return valor.doubleValue;
+  if (valor.booleanValue !== undefined) return valor.booleanValue;
+  if (valor.nullValue !== undefined) return null;
+  if (valor.arrayValue !== undefined) return (valor.arrayValue.values || []).map(extrairValorFirestoreRest);
+  if (valor.mapValue !== undefined) {
+    const obj = {};
+    for (const [k, v] of Object.entries(valor.mapValue.fields || {})) obj[k] = extrairValorFirestoreRest(v);
+    return obj;
+  }
+  return null;
+}
+
+async function buscarComTimeout(url, opcoes, timeoutMs) {
+  const controlador = new AbortController();
+  const timer = setTimeout(() => controlador.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...opcoes, signal: controlador.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function buscarAlunosViaRest() {
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/alunos?pageSize=300`;
+  const resp = await buscarComTimeout(url, {}, 10000);
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  const dados = await resp.json();
+  if (!dados.documents) return [];
+  return dados.documents.map(docItem => {
+    const id = Number(docItem.name.split("/").pop());
+    const campos = {};
+    for (const [chave, valor] of Object.entries(docItem.fields || {})) {
+      campos[chave] = extrairValorFirestoreRest(valor);
+    }
+    return { id, ...campos };
+  });
+}
+
+async function gravarPresencaViaRest(alunoId, data, hora) {
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/presencas`;
+  const corpo = {
+    fields: {
+      alunoId: { integerValue: String(alunoId) },
+      data: { stringValue: data },
+      hora: { stringValue: hora },
+    },
+  };
+  const resp = await buscarComTimeout(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpo),
+  }, 10000);
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+}
+const colLancamentos = collection(db, "lancamentos");
+const colRecorrentes = collection(db, "recorrentes");
+const colPresencas = collection(db, "presencas");
+
+/* Sincroniza uma lista completa (padrão já usado no resto do app: toda
+   ação monta a lista nova inteira e "persiste") com uma coleção do
+   Firestore: grava quem mudou/é novo e apaga quem saiu da lista. */
+async function sincronizarColecao(refColecao, listaAtual, listaNova) {
+  const batch = writeBatch(db);
+  const idsNovos = new Set(listaNova.map(item => String(item.id)));
+  listaAtual.forEach(item => {
+    if (!idsNovos.has(String(item.id))) batch.delete(doc(refColecao, String(item.id)));
+  });
+  listaNova.forEach(item => {
+    const { id, ...dadosSemId } = item;
+    batch.set(doc(refColecao, String(id)), dadosSemId);
+  });
+  await batch.commit();
+}
+
+const ALUNOS_INICIAIS = [
+  {
+    id: 1, nome: "Marlene Aparecida Souza", idade: 68, faixaEtaria: "Idoso (60+)",
+    telefone: "5562988880001",
+    comorbidades: ["Hipertensão", "Osteoporose"], professor: "Rafael Nogueira",
+    suplementacao: "Whey isolado, 20g pós-treino",
+    exercicios: [
+      { id: "e1", nome: "Caminhada leve — 20min", status: "realizado", data: "08/09" },
+      { id: "e2", nome: "Alongamento lombar", status: "realizado", data: "08/09" },
+      { id: "e3", nome: "Fortalecimento de quadril (elástico)", status: "a realizar", data: "09/09" },
+      { id: "e4", nome: "Equilíbrio unipodal", status: "pendente", data: "07/09" },
+    ],
+  },
+  {
+    id: 2, nome: "Diego Ferreira Lima", idade: 24, faixaEtaria: "Adulto jovem (18–29)",
+    telefone: "5562988880002",
+    comorbidades: [], professor: "Camila Duarte", suplementacao: "Creatina, 5g ao dia",
+    exercicios: [
+      { id: "e5", nome: "Agachamento livre — 4x10", status: "realizado", data: "09/09" },
+      { id: "e6", nome: "Supino reto — 4x8", status: "a realizar", data: "09/09" },
+      { id: "e7", nome: "Levantamento terra — 3x6", status: "a realizar", data: "10/09" },
+    ],
+  },
+  {
+    id: 3, nome: "Iolanda Prestes Cardoso", idade: 55, faixaEtaria: "Meia-idade (45–59)",
+    telefone: "5562988880003",
+    comorbidades: ["Diabetes tipo 2", "Artrose no joelho"], professor: "Rafael Nogueira",
+    suplementacao: "Ômega 3, 1 cápsula no almoço",
+    exercicios: [
+      { id: "e8", nome: "Bicicleta ergométrica — 15min", status: "pendente", data: "07/09" },
+      { id: "e9", nome: "Cadeira extensora (carga leve)", status: "pendente", data: "08/09" },
+      { id: "e10", nome: "Hidroginástica — turma das 10h", status: "a realizar", data: "09/09" },
+    ],
+  },
+];
+
+/* Plano de contas — centros de custo padrão para uma academia.
+   Cada lançamento (manual, recorrente ou importado do OFX) é
+   classificado em um desses centros. */
+const PLANO_DE_CONTAS = [
+  { grupo: "Receitas", contas: ["Mensalidades", "Matrículas", "Vendas de produtos/suplementos", "Aulas avulsas / personal trainer", "Outras receitas"] },
+  { grupo: "Despesas com pessoal", contas: ["Salários e encargos", "Pró-labore", "Comissões de professores"] },
+  { grupo: "Despesas administrativas", contas: ["Internet e telefone", "Contabilidade", "Material de escritório", "Softwares e sistemas"] },
+  { grupo: "Despesas com instalações", contas: ["Aluguel", "Água", "Energia elétrica", "IPTU / Condomínio", "Limpeza e conservação"] },
+  { grupo: "Despesas com equipamentos", contas: ["Manutenção de aparelhos", "Compra de equipamentos"] },
+  { grupo: "Marketing", contas: ["Publicidade e divulgação", "Redes sociais"] },
+  { grupo: "Impostos e taxas", contas: ["Impostos", "Taxas bancárias"] },
+  { grupo: "Outras despesas", contas: ["Diversos / não classificado"] },
+];
+
+function sugerirCentroCusto(descricao, tipo) {
+  const d = descricao.toLowerCase();
+  if (tipo === "receita") {
+    if (d.includes("matric")) return "Matrículas";
+    if (d.includes("produto") || d.includes("suplement") || d.includes("loja")) return "Vendas de produtos/suplementos";
+    if (d.includes("personal") || d.includes("aula avulsa")) return "Aulas avulsas / personal trainer";
+    return "Mensalidades";
+  }
+  if (d.includes("água") || d.includes("agua") || d.includes("saneamento") || d.includes("sabesp") || d.includes("saae")) return "Água";
+  if (d.includes("luz") || d.includes("energia") || d.includes("eletrica") || d.includes("elétrica") || d.includes("cemig") || d.includes("enel") || d.includes("celg") || d.includes("light")) return "Energia elétrica";
+  if (d.includes("internet") || d.includes("telefone") || d.includes("vivo") || d.includes("claro") || d.includes("tim") || d.includes("oi ")) return "Internet e telefone";
+  if (d.includes("aluguel") || d.includes("imobiliaria") || d.includes("imobiliária")) return "Aluguel";
+  if (d.includes("condominio") || d.includes("condomínio") || d.includes("iptu")) return "IPTU / Condomínio";
+  if (d.includes("salario") || d.includes("salário") || d.includes("folha") || d.includes("fgts") || d.includes("inss")) return "Salários e encargos";
+  if (d.includes("contad") || d.includes("contabil")) return "Contabilidade";
+  if (d.includes("equipamento") || d.includes("manuten")) return "Manutenção de aparelhos";
+  if (d.includes("anuncio") || d.includes("anúncio") || d.includes("marketing") || d.includes("facebook") || d.includes("instagram") || d.includes("google ads")) return "Publicidade e divulgação";
+  if (d.includes("tarifa") || d.includes("taxa banc") || d.includes("iof")) return "Taxas bancárias";
+  if (d.includes("imposto") || d.includes("das ") || d.includes("simples nacional")) return "Impostos";
+  return "Diversos / não classificado";
+}
+
+function opcoesPlanoDeContas(selecionado) {
+  return PLANO_DE_CONTAS.map(g => `
+    <optgroup label="${g.grupo}">
+      ${g.contas.map(c => `<option value="${c}" ${c === selecionado ? "selected" : ""}>${c}</option>`).join("")}
+    </optgroup>
+  `).join("");
+}
+const STATUS_INFO = {
+  "realizado": { cor: "#4C7A52", bg: "#E7EFE3" },
+  "a realizar": { cor: "#A9700E", bg: "#F6E9CF" },
+  "pendente": { cor: "#A24230", bg: "#F4E1DA" },
+};
+
+/* Cardápios de referência — resumo educativo baseado em diretrizes públicas
+   (Guia Alimentar da População Brasileira/Ministério da Saúde, Sociedade
+   Brasileira de Cardiologia/Hipertensão, Sociedade Brasileira de Diabetes).
+   São sugestões gerais, não prescrição individual. */
+const DADOS_CARDAPIO = {
+  jovens: {
+    titulo: "Jovens e adultos — alimentação saudável geral",
+    principios: [
+      "Priorizar alimentos in natura ou minimamente processados",
+      "Evitar ultraprocessados (refrigerante, salgadinho, embutidos)",
+      "Base do prato: arroz, feijão, legumes/verduras e uma proteína",
+      "Variedade e moderação, sem cortar grupos alimentares inteiros",
+    ],
+    refeicoes: {
+      "Café da manhã": ["Fruta da estação", "Pão integral ou tapioca", "Ovo ou queijo branco", "Café ou chá sem açúcar"],
+      "Almoço": ["Arroz + feijão", "Salada crua colorida", "Carne magra, frango ou peixe grelhado", "Legumes refogados"],
+      "Lanche da tarde": ["Iogurte natural", "Castanhas ou fruta", "Água ou suco natural sem açúcar"],
+      "Jantar": ["Sopa de legumes com proteína", "ou versão mais leve do almoço", "Salada verde"],
+    },
+  },
+  idosos: {
+    titulo: "3ª idade — foco em proteína, cálcio e fibras",
+    principios: [
+      "Proteína em toda refeição principal (previne perda de massa muscular)",
+      "Cálcio e vitamina D para a saúde óssea (laticínios, folhas verde-escuras)",
+      "Fibras e boa hidratação para o funcionamento intestinal",
+      "Preparações fáceis de mastigar e mais temperadas com ervas do que sal",
+    ],
+    refeicoes: {
+      "Café da manhã": ["Fruta amassada ou picada", "Pão macio ou mingau", "Leite, iogurte ou queijo branco"],
+      "Almoço": ["Arroz + feijão bem cozido", "Proteína macia (frango desfiado, peixe, ovo)", "Legumes cozidos", "Salada picada fina"],
+      "Lanche da tarde": ["Iogurte ou vitamina de fruta com leite", "Torrada integral"],
+      "Jantar": ["Sopa nutritiva com proteína e legumes", "Fruta de sobremesa"],
+    },
+  },
+  hipertensao: {
+    titulo: "Alunos com hipertensão — inspirado no padrão DASH",
+    principios: [
+      "Reduzir o sal: usar ervas, alho, limão e especiarias no lugar",
+      "Evitar embutidos, caldos prontos e enlatados (ricos em sódio)",
+      "Aumentar frutas, verduras e laticínios com pouca gordura (fonte de cálcio e potássio)",
+      "Reduzir gordura saturada e frituras",
+    ],
+    refeicoes: {
+      "Café da manhã": ["Fruta fresca", "Pão integral com queijo branco magro", "Café ou chá sem açúcar"],
+      "Almoço": ["Arroz + feijão (tempero natural, sem caldo pronto)", "Salada crua à vontade", "Frango ou peixe grelhado sem sal em excesso", "Legumes no vapor"],
+      "Lanche da tarde": ["Iogurte natural desnatado", "Fruta ou castanhas sem sal"],
+      "Jantar": ["Sopa de legumes caseira, temperada com ervas", "Salada verde"],
+    },
+  },
+  diabetes: {
+    titulo: "Alunos com diabetes tipo 2 — carboidratos de melhor qualidade",
+    principios: [
+      "Preferir carboidratos integrais (arroz integral, aveia, pão integral) a refinados",
+      "Reduzir açúcar adicionado e doces",
+      "Combinar carboidrato com proteína e fibra para desacelerar a absorção de glicose",
+      "Manter horários regulares de refeição, evitando pular refeições",
+    ],
+    refeicoes: {
+      "Café da manhã": ["Fruta com casca (fibra)", "Pão integral ou aveia", "Ovo ou queijo branco", "Café/chá sem açúcar"],
+      "Almoço": ["Arroz integral + feijão", "Salada crua abundante", "Proteína magra grelhada", "Legumes variados"],
+      "Lanche da tarde": ["Iogurte natural sem açúcar", "Punhado de castanhas"],
+      "Jantar": ["Proteína magra + legumes", "Salada verde", "Evitar carboidrato refinado à noite"],
+    },
+  },
+  osteoartrose: {
+    titulo: "Osteoporose e artrose — ossos e articulações",
+    principios: [
+      "Cálcio e vitamina D diários (laticínios, folhas verde-escuras, exposição solar)",
+      "Ômega-3 anti-inflamatório (peixes como sardinha e salmão)",
+      "Manter peso saudável para reduzir sobrecarga nas articulações",
+      "Evitar excesso de sal, que aumenta a perda de cálcio pela urina",
+    ],
+    refeicoes: {
+      "Café da manhã": ["Leite ou iogurte", "Fruta", "Pão integral"],
+      "Almoço": ["Arroz + feijão", "Folhas verde-escuras (couve, brócolis)", "Peixe ou frango grelhado", "Legumes"],
+      "Lanche da tarde": ["Iogurte com fruta", "Castanhas (fonte de ômega-3 vegetal)"],
+      "Jantar": ["Peixe grelhado ou omelete", "Salada de folhas verdes", "Legumes no vapor"],
+    },
+  },
+};
+
+let alunos = [];
+let lancamentos = [];
+let recorrentes = [];
+let presencasHoje = [];
+let alunoLembreteAtual = null;
+let alunoChatAtual = null;
+
+async function persistir(novaLista) {
+  await sincronizarColecao(colAlunos, alunos, novaLista);
+}
+
+/* ---------------- login (troque por autenticação real no backend) ---------------- */
+
+/* ---------------- login (Firebase Authentication) ---------------- */
+
+let listenersIniciados = false;
+let emFluxoCheckinGeral = false;
+let primeiraCargaAlunos = true;
+let primeiraCargaLancamentos = true;
+let primeiraCargaRecorrentes = true;
+
+async function tentarLogin(email, senha) {
+  try {
+    const credencial = await signInWithEmailAndPassword(auth, email.trim(), senha);
+    return credencial.user;
+  } catch (e) {
+    return null;
+  }
+}
+
+function encerrarSessao() {
+  signOut(auth);
+}
+
+function mostrarApp(usuarioLogado) {
+  document.getElementById("telaLogin").classList.add("oculto");
+  document.getElementById("appConteudo").classList.remove("oculto");
+  document.getElementById("usuarioLogado").textContent = "Logado como " + (usuarioLogado.displayName || usuarioLogado.email);
+  document.getElementById("dataHoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+  iniciarListenersFirestore();
+}
+
+function mostrarTelaLogin() {
+  document.getElementById("telaLogin").classList.remove("oculto");
+  document.getElementById("appConteudo").classList.add("oculto");
+  document.getElementById("loginUsuario").value = "";
+  document.getElementById("loginSenha").value = "";
+}
+
+// Mantém a sessão entre recarregamentos da página automaticamente (o
+// Firebase cuida disso) e reage a login/logout em tempo real.
+onAuthStateChanged(auth, (usuario) => {
+  if (emFluxoCheckinGeral) return; // não interfere na tela pública de check-in
+  if (usuario) mostrarApp(usuario);
+  else mostrarTelaLogin();
+});
+
+function iniciarListenersFirestore() {
+  if (listenersIniciados) return;
+  listenersIniciados = true;
+
+  onSnapshot(colAlunos, (snap) => {
+    if (snap.empty && primeiraCargaAlunos) {
+      primeiraCargaAlunos = false;
+      sincronizarColecao(colAlunos, [], ALUNOS_INICIAIS)
+        .catch(e => mostrarStatus("Erro ao criar alunos de exemplo: " + (e.code || e.message), "erro"));
+      return;
+    }
+    primeiraCargaAlunos = false;
+    alunos = snap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+    renderizarTudo();
+  }, (erro) => {
+    mostrarStatus("Erro ao ler alunos do Firestore: " + (erro.code || erro.message), "erro");
+  });
+
+  onSnapshot(colLancamentos, (snap) => {
+    if (snap.empty && primeiraCargaLancamentos) {
+      primeiraCargaLancamentos = false;
+      sincronizarColecao(colLancamentos, [], LANCAMENTOS_INICIAIS)
+        .catch(e => mostrarStatus("Erro ao criar lançamentos de exemplo: " + (e.code || e.message), "erro"));
+      return;
+    }
+    primeiraCargaLancamentos = false;
+    lancamentos = snap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+    if (document.getElementById("finSaldo")) renderizarFinanceiro();
+  }, (erro) => {
+    mostrarStatus("Erro ao ler lançamentos do Firestore: " + (erro.code || erro.message), "erro");
+  });
+
+  onSnapshot(colRecorrentes, (snap) => {
+    if (snap.empty && primeiraCargaRecorrentes) {
+      primeiraCargaRecorrentes = false;
+      sincronizarColecao(colRecorrentes, [], RECORRENTES_INICIAIS)
+        .catch(e => mostrarStatus("Erro ao criar recorrentes de exemplo: " + (e.code || e.message), "erro"));
+      return;
+    }
+    primeiraCargaRecorrentes = false;
+    recorrentes = snap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+    if (document.getElementById("listaRecorrentes")) renderizarRecorrentes();
+  }, (erro) => {
+    mostrarStatus("Erro ao ler recorrentes do Firestore: " + (erro.code || erro.message), "erro");
+  });
+
+  const consultaPresencasHoje = query(colPresencas, where("data", "==", hojeChave()));
+  onSnapshot(consultaPresencasHoje, (snap) => {
+    presencasHoje = snap.docs.map(d => d.data());
+    if (document.getElementById("listaPresencasHoje")) renderizarListaPresencasHoje();
+  }, (erro) => {
+    mostrarStatus("Erro ao ler presenças do Firestore: " + (erro.code || erro.message), "erro");
+  });
+}
+
+/* ---------------- financeiro ---------------- */
+
+const LANCAMENTOS_INICIAIS = [
+  { id: 1, tipo: "receita", descricao: "Mensalidade — Diego Ferreira Lima", valor: 150, data: "2026-09-05", status: "pago", alunoId: 2, centroCusto: "Mensalidades", origem: "manual" },
+  { id: 2, tipo: "receita", descricao: "Mensalidade — Marlene Aparecida Souza", valor: 130, data: "2026-09-08", status: "pendente", alunoId: 1, centroCusto: "Mensalidades", origem: "manual" },
+  { id: 3, tipo: "despesa", descricao: "Aluguel do espaço", valor: 2200, data: "2026-09-05", status: "pago", alunoId: null, centroCusto: "Aluguel", origem: "manual" },
+  { id: 4, tipo: "despesa", descricao: "Manutenção de equipamentos", valor: 340, data: "2026-09-10", status: "pendente", alunoId: null, centroCusto: "Manutenção de aparelhos", origem: "manual" },
+];
+
+async function persistirFinanceiro(novaLista) {
+  await sincronizarColecao(colLancamentos, lancamentos, novaLista);
+}
+
+function adicionarLancamento(dados) {
+  const novoId = lancamentos.length ? Math.max(...lancamentos.map(l => l.id)) + 1 : 1;
+  persistirFinanceiro([...lancamentos, { id: novoId, origem: "manual", ...dados }]);
+}
+
+function alternarStatusLancamento(id) {
+  persistirFinanceiro(lancamentos.map(l => l.id === id ? { ...l, status: l.status === "pago" ? "pendente" : "pago" } : l));
+}
+
+function excluirLancamento(id) {
+  if (!confirm("Excluir este lançamento?")) return;
+  persistirFinanceiro(lancamentos.filter(l => l.id !== id));
+}
+
+function formatarMoeda(valor) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarDataBR(isoOuBR) {
+  if (!isoOuBR) return "—";
+  if (isoOuBR.includes("-")) {
+    const [ano, mes, dia] = isoOuBR.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+  return isoOuBR;
+}
+
+/* ---------------- gastos recorrentes ---------------- */
+
+const RECORRENTES_INICIAIS = [
+  { id: 1, descricao: "Conta de água", valor: 120, diaVencimento: 10, centroCusto: "Água", ativo: true },
+  { id: 2, descricao: "Conta de energia elétrica", valor: 480, diaVencimento: 12, centroCusto: "Energia elétrica", ativo: true },
+  { id: 3, descricao: "Internet e telefone", valor: 180, diaVencimento: 15, centroCusto: "Internet e telefone", ativo: true },
+];
+
+async function persistirRecorrentes(novaLista) {
+  await sincronizarColecao(colRecorrentes, recorrentes, novaLista);
+}
+
+function excluirRecorrente(id) {
+  if (!confirm("Excluir este gasto recorrente? Lançamentos já gerados não serão apagados.")) return;
+  persistirRecorrentes(recorrentes.filter(r => r.id !== id));
+}
+
+function alternarAtivoRecorrente(id) {
+  persistirRecorrentes(recorrentes.map(r => r.id === id ? { ...r, ativo: !r.ativo } : r));
+}
+
+function renderizarRecorrentes() {
+  document.getElementById("listaRecorrentes").innerHTML = recorrentes.length
+    ? recorrentes.map(r => `
+        <div class="linha-recorrente ${r.ativo ? "" : "inativo"}">
+          <div class="desc">
+            ${r.descricao}${r.ativo ? "" : `<span class="selo-inativo">inativo</span>`}
+            <small>Vence todo dia ${r.diaVencimento} · ${r.centroCusto}</small>
+          </div>
+          <span class="valor-despesa">${formatarMoeda(r.valor)}/mês</span>
+          <button class="botao-alternar-status ${r.ativo ? "pago" : "pendente"}" data-alternar-ativo="${r.id}">${r.ativo ? "Ativo" : "Pausado"}</button>
+          <button class="botao-editar-lancamento" data-editar-recorrente="${r.id}">Editar</button>
+          <button class="botao-excluir-lancamento" data-excluir-recorrente="${r.id}">×</button>
+        </div>
+      `).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum gasto recorrente cadastrado ainda.</p>`;
+
+  document.getElementById("listaRecorrentes").querySelectorAll("[data-alternar-ativo]").forEach(btn =>
+    btn.addEventListener("click", () => alternarAtivoRecorrente(Number(btn.dataset.alternarAtivo))));
+  document.getElementById("listaRecorrentes").querySelectorAll("[data-editar-recorrente]").forEach(btn =>
+    btn.addEventListener("click", () => abrirEdicaoRecorrente(Number(btn.dataset.editarRecorrente))));
+  document.getElementById("listaRecorrentes").querySelectorAll("[data-excluir-recorrente]").forEach(btn =>
+    btn.addEventListener("click", () => excluirRecorrente(Number(btn.dataset.excluirRecorrente))));
+}
+
+function gerarLancamentosRecorrentesDoMes() {
+  const agora = new Date();
+  const anoMes = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+  const jaGerados = new Set(
+    lancamentos.filter(l => l.origem === "recorrente" && (l.data || "").startsWith(anoMes)).map(l => l.recorrenteId)
+  );
+  const novosLancamentos = recorrentes
+    .filter(r => r.ativo && !jaGerados.has(r.id))
+    .map((r, i) => ({
+      id: (lancamentos.length ? Math.max(...lancamentos.map(l => l.id)) : 0) + i + 1,
+      tipo: "despesa",
+      descricao: r.descricao,
+      valor: r.valor,
+      data: `${anoMes}-${String(r.diaVencimento).padStart(2, "0")}`,
+      status: "pendente",
+      alunoId: null,
+      centroCusto: r.centroCusto,
+      origem: "recorrente",
+      recorrenteId: r.id,
+    }));
+
+  if (!novosLancamentos.length) {
+    mostrarStatus("Todos os gastos recorrentes já têm lançamento gerado neste mês.", "ok");
+    return;
+  }
+  persistirFinanceiro([...lancamentos, ...novosLancamentos]);
+  mostrarStatus(`${novosLancamentos.length} lançamento(s) recorrente(s) gerado(s) para este mês.`, "ok");
+}
+
+function renderizarFinanceiro() {
+  const receitasPagas = lancamentos.filter(l => l.tipo === "receita" && l.status === "pago").reduce((s, l) => s + l.valor, 0);
+  const despesasPagas = lancamentos.filter(l => l.tipo === "despesa" && l.status === "pago").reduce((s, l) => s + l.valor, 0);
+  const aReceber = lancamentos.filter(l => l.tipo === "receita" && l.status === "pendente").reduce((s, l) => s + l.valor, 0);
+  const aPagar = lancamentos.filter(l => l.tipo === "despesa" && l.status === "pendente").reduce((s, l) => s + l.valor, 0);
+
+  document.getElementById("finSaldo").textContent = formatarMoeda(receitasPagas - despesasPagas);
+  document.getElementById("finAReceber").textContent = formatarMoeda(aReceber);
+  document.getElementById("finAPagar").textContent = formatarMoeda(aPagar);
+
+  function linhaHtml(l) {
+    const aluno = l.alunoId ? alunos.find(a => a.id === l.alunoId) : null;
+    return `
+      <div class="linha-lancamento">
+        <div class="desc">
+          ${l.descricao}
+          <small>${formatarDataBR(l.data)} · ${l.centroCusto || "Sem centro de custo"}${aluno ? " · " + aluno.nome : ""}${l.origem === "ofx" ? " · importado do OFX" : ""}${l.origem === "recorrente" ? " · gasto recorrente" : ""}</small>
+        </div>
+        <span class="${l.tipo === "receita" ? "valor-receita" : "valor-despesa"}">${l.tipo === "receita" ? "+" : "−"} ${formatarMoeda(l.valor)}</span>
+        <button class="botao-alternar-status ${l.status}" data-alternar-status="${l.id}">${l.status === "pago" ? "Pago" : "Pendente"}</button>
+        <button class="botao-editar-lancamento" data-editar-lancamento="${l.id}" aria-label="Editar">Editar</button>
+        <button class="botao-excluir-lancamento" data-excluir-lancamento="${l.id}" aria-label="Excluir">×</button>
+      </div>`;
+  }
+
+  const aReceberLista = lancamentos.filter(l => l.tipo === "receita" && l.status === "pendente");
+  const aPagarLista = lancamentos.filter(l => l.tipo === "despesa" && l.status === "pendente");
+  const fluxoLista = lancamentos.filter(l => l.status === "pago").sort((a, b) => (a.data < b.data ? 1 : -1));
+
+  document.getElementById("listaAReceber").innerHTML = aReceberLista.length
+    ? aReceberLista.map(linhaHtml).join("") : `<p style="font-size:13px;color:var(--ink-soft)">Nenhuma conta a receber pendente.</p>`;
+  document.getElementById("listaAPagar").innerHTML = aPagarLista.length
+    ? aPagarLista.map(linhaHtml).join("") : `<p style="font-size:13px;color:var(--ink-soft)">Nenhuma conta a pagar pendente.</p>`;
+  document.getElementById("listaFluxoCaixa").innerHTML = fluxoLista.length
+    ? fluxoLista.map(linhaHtml).join("") : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum lançamento realizado ainda.</p>`;
+
+  document.getElementById("telaFinanceiro").querySelectorAll("[data-alternar-status]").forEach(btn =>
+    btn.addEventListener("click", () => alternarStatusLancamento(Number(btn.dataset.alternarStatus))));
+  document.getElementById("telaFinanceiro").querySelectorAll("[data-editar-lancamento]").forEach(btn =>
+    btn.addEventListener("click", () => abrirEdicaoLancamento(Number(btn.dataset.editarLancamento))));
+  document.getElementById("telaFinanceiro").querySelectorAll("[data-excluir-lancamento]").forEach(btn =>
+    btn.addEventListener("click", () => excluirLancamento(Number(btn.dataset.excluirLancamento))));
+}
+
+/* ---------------- utilidades ---------------- */
+
+function calcularFaixaEtaria(idade) {
+  const n = Number(idade);
+  if (n < 13) return "Criança (até 12)";
+  if (n < 18) return "Adolescente (13–17)";
+  if (n < 30) return "Adulto jovem (18–29)";
+  if (n < 45) return "Adulto (30–44)";
+  if (n < 60) return "Meia-idade (45–59)";
+  return "Idoso (60+)";
+}
+
+function iniciais(nome) {
+  return nome.split(" ").filter(p => p.length > 2).slice(0, 2).map(p => p[0]).join("").toUpperCase();
+}
+
+function mostrarStatus(msg, tipo) {
+  const el = document.getElementById("faixaStatus");
+  el.textContent = msg;
+  el.className = "faixa-status " + (tipo === "erro" ? "faixa-erro" : "faixa-ok");
+  if (tipo !== "erro") setTimeout(() => el.classList.add("oculto"), 2500);
+}
+
+function abrirModal(id) { document.getElementById(id).classList.add("aberta"); }
+function fecharModal(id) { document.getElementById(id).classList.remove("aberta"); }
+
+/* ---------------- navegação entre telas ---------------- */
+
+function mostrarTela(nomeTela) {
+  document.querySelectorAll(".tela").forEach(t => t.classList.add("oculto"));
+  document.getElementById(nomeTela).classList.remove("oculto");
+  document.querySelectorAll(".botao-nav").forEach(b => b.classList.toggle("ativo", b.dataset.tela === nomeTela));
+}
+
+/* ---------------- cardápio ---------------- */
+
+let cardapioAtual = "jovens";
+
+function renderizarCardapio(chave) {
+  cardapioAtual = chave;
+  document.querySelectorAll(".botao-nav-cardapio").forEach(b => b.classList.toggle("ativo", b.dataset.cardapio === chave));
+  const dados = DADOS_CARDAPIO[chave];
+  const opcoesAlunos = alunos.map(a => `<option value="${a.id}">${a.nome}</option>`).join("");
+
+  document.getElementById("conteudoCardapio").innerHTML = `
+    <div class="cartao cartao-cardapio">
+      <h2>${dados.titulo}</h2>
+      <div class="cardapio-principios">
+        ${dados.principios.map(p => `<span class="selo selo-neutro">${p}</span>`).join("")}
+      </div>
+      <div class="cardapio-refeicoes">
+        ${Object.entries(dados.refeicoes).map(([nomeRefeicao, itens]) => `
+          <div class="refeicao-card">
+            <h4>${nomeRefeicao}</h4>
+            <ul>${itens.map(i => `<li>${i}</li>`).join("")}</ul>
+          </div>
+        `).join("")}
+      </div>
+      <div class="cardapio-rodape">
+        <select id="selecaoAlunoCardapio">${opcoesAlunos || "<option>Nenhum aluno cadastrado</option>"}</select>
+        <button class="botao-whatsapp" id="btnCardapioWhatsapp">Enviar sugestão alimentar por WhatsApp</button>
+        <button class="botao-chat" id="btnCardapioChat">Enviar sugestão alimentar pelo chat</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("btnCardapioWhatsapp").addEventListener("click", () => enviarCardapioSelecionado("whatsapp"));
+  document.getElementById("btnCardapioChat").addEventListener("click", () => enviarCardapioSelecionado("chat"));
+}
+
+function mensagemCardapio(aluno, dados) {
+  const linhas = Object.entries(dados.refeicoes).map(([nome, itens]) => `${nome}: ${itens.join(", ")}`).join(" | ");
+  return `Olá, ${aluno.nome.split(" ")[0]}! Segue sua sugestão alimentar (${dados.titulo}): ${linhas}. Lembrete: isso é uma sugestão geral — qualquer ajuste, fale com seu professor ou nutricionista.`;
+}
+
+function enviarCardapioSelecionado(canal) {
+  const alunoId = Number(document.getElementById("selecaoAlunoCardapio").value);
+  const aluno = alunos.find(a => a.id === alunoId);
+  if (!aluno) return;
+  const dados = DADOS_CARDAPIO[cardapioAtual];
+  const texto = mensagemCardapio(aluno, dados);
+  if (canal === "whatsapp") abrirWhatsApp(alunoId, texto);
+  else { enviarMensagemChat(alunoId, texto); mostrarStatus(`Sugestão alimentar enviada pelo chat a ${aluno.nome.split(" ")[0]}.`, "ok"); }
+}
+
+/* ---------------- check-in por QR Code ---------------- */
+
+function hojeChave() {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+// Usado pelo check-in público (QR, sem login). Grava via API REST
+// (mais confiável que o SDK nesse fluxo específico — ver comentário
+// acima). Não checa duplicidade antes: uma escrita simples é mais
+// robusta, e um check-in repetido no mesmo dia só duplica a linha no
+// histórico, sem causar problema real.
+async function registrarPresencaPublico(alunoId, tentativa = 1) {
+  try {
+    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    await gravarPresencaViaRest(alunoId, hojeChave(), hora);
+    return { novo: true };
+  } catch (e) {
+    if (tentativa < 3) {
+      await new Promise(r => setTimeout(r, 1200));
+      return registrarPresencaPublico(alunoId, tentativa + 1);
+    }
+    throw e;
+  }
+}
+
+// Usado pela recepção (já logada) — reaproveita a lista de presenças de
+// hoje que já está sincronizada em tempo real, evitando uma consulta
+// extra que poderia falhar por conta de rede.
+async function registrarPresencaRecepcao(alunoId) {
+  const jaRegistrado = presencasHoje.some(p => p.alunoId === alunoId);
+  if (jaRegistrado) return { novo: false };
+  const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  await addDoc(colPresencas, { alunoId, data: hojeChave(), hora });
+  return { novo: true };
+}
+
+function urlCheckinGeral() {
+  const base = location.origin + location.pathname;
+  return `${base}?checkin=geral`;
+}
+
+function srcQrCode(url) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+}
+
+function renderizarListaPresencasHoje() {
+  document.getElementById("listaPresencasHoje").innerHTML = presencasHoje.length
+    ? presencasHoje.map(p => {
+        const aluno = alunos.find(a => a.id === p.alunoId);
+        return `<div class="presenca-linha"><span>${aluno ? aluno.nome : "Aluno removido"}</span><span>${p.hora}</span></div>`;
+      }).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum check-in registrado ainda hoje.</p>`;
+}
+
+function renderizarCheckin() {
+  const url = urlCheckinGeral();
+  document.getElementById("qrGeralImagem").src = srcQrCode(url);
+  document.getElementById("linkCheckinGeral").textContent = url;
+  renderizarListaPresencasHoje();
+  renderizarRecepcaoCheckin(document.getElementById("recepcaoBusca").value || "");
+
+  const selectFiltro = document.getElementById("registroFiltroAluno");
+  const selecionado = selectFiltro.value;
+  selectFiltro.innerHTML = `<option value="">Todos os alunos</option>` +
+    alunos.map(a => `<option value="${a.id}" ${String(a.id) === selecionado ? "selected" : ""}>${a.nome}</option>`).join("");
+}
+
+async function carregarRegistroPresencas() {
+  const btn = document.getElementById("btnCarregarRegistro");
+  const container = document.getElementById("listaRegistroPresencas");
+  btn.disabled = true;
+  btn.textContent = "Carregando...";
+  try {
+    const filtroAlunoId = document.getElementById("registroFiltroAluno").value;
+    const snap = filtroAlunoId
+      ? await getDocs(query(colPresencas, where("alunoId", "==", Number(filtroAlunoId))))
+      : await getDocs(colPresencas);
+    const registros = snap.docs.map(d => d.data())
+      .sort((a, b) => (a.data + a.hora < b.data + b.hora ? 1 : -1));
+
+    container.innerHTML = registros.length
+      ? registros.map(r => {
+          const aluno = alunos.find(a => a.id === r.alunoId);
+          return `<div class="presenca-linha"><span>${aluno ? aluno.nome : "Aluno removido"}</span><span>${formatarDataBR(r.data)} · ${r.hora}</span></div>`;
+        }).join("")
+      : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum registro encontrado.</p>`;
+  } catch (e) {
+    container.innerHTML = `<p style="font-size:13px;color:var(--rust)">Erro ao carregar registro: ${e.code || e.message}</p>`;
+  }
+  btn.disabled = false;
+  btn.textContent = "Carregar registro";
+}
+
+document.getElementById("btnCarregarRegistro").addEventListener("click", carregarRegistroPresencas);
+
+function renderizarRecepcaoCheckin(filtro) {
+  const lista = document.getElementById("recepcaoListaAlunos");
+  const filtrados = alunos.filter(a => a.nome.toLowerCase().includes(filtro.trim().toLowerCase()));
+  lista.innerHTML = filtrados.length
+    ? filtrados.map(a => `<button class="checkin-item" data-checkin-recepcao="${a.id}">${a.nome}</button>`).join("")
+    : `<p class="chat-vazio">Nenhum aluno encontrado.</p>`;
+  lista.querySelectorAll("[data-checkin-recepcao]").forEach(btn =>
+    btn.addEventListener("click", () => confirmarCheckinRecepcao(Number(btn.dataset.checkinRecepcao))));
+}
+
+async function confirmarCheckinRecepcao(alunoId) {
+  const aluno = alunos.find(a => a.id === alunoId);
+  if (aluno.inadimplente) {
+    mostrarStatus(`Check-in bloqueado: ${aluno.nome.split(" ")[0]} está com mensalidade em atraso. Procure a recepção para regularizar.`, "erro");
+    return;
+  }
+  try {
+    const resultado = await registrarPresencaRecepcao(alunoId);
+    mostrarStatus(
+      resultado.novo ? `Presença registrada: ${aluno.nome.split(" ")[0]}.` : `${aluno.nome.split(" ")[0]} já estava presente hoje.`,
+      "ok"
+    );
+  } catch (e) {
+    mostrarStatus("Erro ao registrar presença: " + (e.code || e.message), "erro");
+  }
+}
+
+document.getElementById("recepcaoBusca").addEventListener("input", (e) => renderizarRecepcaoCheckin(e.target.value));
+
+async function iniciarCheckinGeral() {
+  document.getElementById("telaLogin").classList.add("oculto");
+  document.getElementById("appConteudo").classList.add("oculto");
+  document.getElementById("telaConfirmacaoCheckin").classList.remove("oculto");
+  document.getElementById("checkinMensagem").textContent = "Carregando lista de alunos...";
+
+  try {
+    const listaAlunos = await buscarAlunosViaRest();
+    document.getElementById("checkinMensagem").textContent = listaAlunos.length
+      ? "Toque no seu nome para registrar sua presença"
+      : "Nenhum aluno cadastrado ainda no sistema.";
+    renderizarListaCheckinGeral(listaAlunos, "");
+    document.getElementById("checkinBusca").oninput = (e) => renderizarListaCheckinGeral(listaAlunos, e.target.value);
+  } catch (e) {
+    document.getElementById("checkinTitulo").textContent = "Não foi possível carregar a lista";
+    document.getElementById("checkinMensagem").textContent = "Erro técnico: " + (e.message || "desconhecido") + " — fale com a recepção.";
+  }
+}
+
+function renderizarListaCheckinGeral(alunosCarregados, filtro) {
+  const lista = document.getElementById("checkinListaAlunos");
+  const filtrados = alunosCarregados.filter(a => a.nome.toLowerCase().includes(filtro.trim().toLowerCase()));
+  lista.innerHTML = filtrados.length
+    ? filtrados.map(a => `<button class="checkin-item" data-checkin-aluno="${a.id}">${a.nome}</button>`).join("")
+    : `<p class="chat-vazio">Nenhum aluno encontrado.</p>`;
+  lista.querySelectorAll("[data-checkin-aluno]").forEach(btn =>
+    btn.addEventListener("click", () => confirmarCheckinGeral(Number(btn.dataset.checkinAluno), alunosCarregados)));
+}
+
+async function confirmarCheckinGeral(alunoId, alunosCarregados) {
+  const aluno = alunosCarregados.find(a => a.id === alunoId);
+  document.getElementById("checkinBuscaWrap").classList.add("oculto");
+  document.getElementById("checkinListaAlunos").classList.add("oculto");
+
+  if (aluno.inadimplente) {
+    document.getElementById("checkinTitulo").textContent = "Check-in bloqueado";
+    document.getElementById("checkinMensagem").textContent = `${aluno.nome.split(" ")[0]}, sua mensalidade está em atraso. Procure a recepção para regularizar antes de treinar.`;
+    return;
+  }
+
+  document.getElementById("checkinTitulo").textContent = "Registrando presença...";
+  try {
+    const resultado = await registrarPresencaPublico(alunoId);
+    document.getElementById("checkinTitulo").textContent = resultado.novo ? "Presença registrada!" : "Você já estava presente hoje";
+    document.getElementById("checkinMensagem").textContent = `Bom treino, ${aluno.nome.split(" ")[0]}!`;
+  } catch (e) {
+    document.getElementById("checkinTitulo").textContent = "Não foi possível registrar";
+    document.getElementById("checkinMensagem").textContent = "Erro técnico: " + (e.code || e.message || "desconhecido") + " — fale com a recepção.";
+  }
+}
+
+/* ---------------- ações sobre os dados ---------------- */
+
+function cadastrarAluno(dados) {
+  const novoId = alunos.length ? Math.max(...alunos.map(a => a.id)) + 1 : 1;
+  persistir([...alunos, { id: novoId, exercicios: [], ...dados }]);
+}
+
+function atualizarAluno(id, dados) {
+  persistir(alunos.map(a => a.id === id ? { ...a, ...dados } : a));
+}
+
+function alternarInadimplencia(id) {
+  const aluno = alunos.find(a => a.id === id);
+  atualizarAluno(id, { inadimplente: !aluno.inadimplente });
+}
+
+/* Recalcula automaticamente quem está inadimplente: aluno com alguma
+   mensalidade (receita) pendente e com data de vencimento já passada. */
+function recalcularInadimplencia() {
+  const hoje = hojeChave();
+  const novaLista = alunos.map(aluno => {
+    const temMensalidadeVencida = lancamentos.some(l =>
+      l.tipo === "receita" && l.status === "pendente" && l.alunoId === aluno.id && l.data && l.data < hoje
+    );
+    return aluno.inadimplente === temMensalidadeVencida ? aluno : { ...aluno, inadimplente: temMensalidadeVencida };
+  });
+  return persistir(novaLista);
+}
+
+function excluirAluno(id) {
+  const aluno = alunos.find(a => a.id === id);
+  if (!confirm(`Excluir o cadastro de ${aluno.nome}? Isso remove a ficha e o histórico de exercícios dele.`)) return;
+  persistir(alunos.filter(a => a.id !== id));
+}
+
+function adicionarExercicio(alunoId, nome, data) {
+  const novoExercicio = { id: "ex-" + Date.now(), nome, data: data || "—", status: "a realizar" };
+  persistir(alunos.map(a => a.id === alunoId ? { ...a, exercicios: [...a.exercicios, novoExercicio] } : a));
+}
+
+function mudarStatusExercicio(alunoId, exercicioId, novoStatus) {
+  persistir(alunos.map(a => a.id !== alunoId ? a : {
+    ...a,
+    exercicios: a.exercicios.map(ex => ex.id === exercicioId ? { ...ex, status: novoStatus } : ex)
+  }));
+}
+
+function mensagemPadrao(aluno) {
+  const proximo = aluno.exercicios.find(e => e.status === "a realizar") || aluno.exercicios[0];
+  return `Olá, ${aluno.nome.split(" ")[0]}! Passando para lembrar do seu treino: "${proximo ? proximo.nome : "consulte sua prancheta"}". Não esqueça da suplementação (${aluno.suplementacao}) conforme orientação de ${aluno.professor}. Qualquer dúvida, fale com seu professor antes de iniciar.`;
+}
+
+function abrirWhatsApp(alunoId, mensagem) {
+  const aluno = alunos.find(a => a.id === alunoId);
+  if (!aluno.telefone) {
+    mostrarStatus(`${aluno.nome.split(" ")[0]} não tem WhatsApp cadastrado. Edite o aluno para adicionar o número.`, "erro");
+    return;
+  }
+  const texto = encodeURIComponent(mensagem || mensagemPadrao(aluno));
+  window.open(`https://wa.me/${aluno.telefone}?text=${texto}`, "_blank");
+}
+function confirmarEnvioLembrete(alunoId, mensagem) {
+  const agora = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const novaLista = alunos.map(a => a.id === alunoId
+    ? { ...a, ultimoLembrete: agora, mensagens: [...(a.mensagens || []), { remetente: "professor", texto: mensagem, hora: agora }] }
+    : a);
+  persistir(novaLista);
+  abrirWhatsApp(alunoId, mensagem);
+  const aluno = alunos.find(a => a.id === alunoId);
+  document.getElementById("rodapeLembrete").innerHTML =
+    `<span class="confirmacao">Notificação enviada pelo chat e pelo WhatsApp de ${aluno.nome.split(" ")[0]}.</span>`;
+  setTimeout(() => fecharModal("modalLembrete"), 1400);
+}
+
+function enviarMensagemChat(alunoId, texto) {
+  const agora = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  persistir(alunos.map(a => a.id === alunoId
+    ? { ...a, mensagens: [...(a.mensagens || []), { remetente: "professor", texto, hora: agora }] }
+    : a));
+}
+
+/* ---------------- renderização ---------------- */
+
+function renderizarTudo() {
+  renderizarDashboard();
+  renderizarPendencias();
+  renderizarFiltroFaixas();
+  renderizarAlunos();
+  if (document.getElementById("conteudoCardapio")) renderizarCardapio(cardapioAtual);
+  if (document.getElementById("qrGeralImagem")) renderizarCheckin();
+  if (document.getElementById("finSaldo")) renderizarFinanceiro();
+  if (document.getElementById("listaRecorrentes")) renderizarRecorrentes();
+}
+
+function renderizarPendencias() {
+  const pendencias = [];
+  alunos.forEach(a => a.exercicios.forEach(ex => {
+    if (ex.status === "pendente") pendencias.push({ aluno: a, exercicio: ex });
+  }));
+  document.getElementById("totalPendencias").textContent = pendencias.length;
+  document.getElementById("listaPendencias").innerHTML = pendencias.length
+    ? pendencias.map(({ aluno, exercicio }) => `
+        <div class="linha-turma">
+          <span><strong>${aluno.nome}</strong> — ${exercicio.nome} (${exercicio.data})</span>
+          <button class="botao-notificar" data-notificar-exercicio="${aluno.id}|${exercicio.id}">Notificar</button>
+        </div>
+      `).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhuma pendência no momento. Tudo em dia!</p>`;
+
+  document.querySelectorAll("#listaPendencias [data-notificar-exercicio]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const [alunoId, exercicioId] = btn.dataset.notificarExercicio.split("|");
+      abrirLembrete(Number(alunoId), exercicioId);
+    }));
+}
+
+function renderizarDashboard() {
+  let realizado = 0, aRealizar = 0, pendente = 0;
+  alunos.forEach(a => a.exercicios.forEach(ex => {
+    if (ex.status === "realizado") realizado++;
+    else if (ex.status === "a realizar") aRealizar++;
+    else pendente++;
+  }));
+  const total = realizado + aRealizar + pendente;
+  document.getElementById("totalGeral").textContent = total;
+  document.getElementById("numRealizado").textContent = realizado;
+  document.getElementById("numARealizar").textContent = aRealizar;
+  document.getElementById("numPendente").textContent = pendente;
+  document.getElementById("barraRealizado").style.width = (total ? realizado / total * 100 : 0) + "%";
+  document.getElementById("barraARealizar").style.width = (total ? aRealizar / total * 100 : 0) + "%";
+  document.getElementById("barraPendente").style.width = (total ? pendente / total * 100 : 0) + "%";
+
+  const faixas = [...new Set(alunos.map(a => a.faixaEtaria))];
+  document.getElementById("listaFaixas").innerHTML = faixas.map(f => `
+    <div class="linha-turma"><span>${f}</span><span>${alunos.filter(a => a.faixaEtaria === f).length} aluno(s)</span></div>
+  `).join("") || `<p style="font-size:13px;color:var(--ink-soft)">Nenhum aluno cadastrado ainda.</p>`;
+}
+
+function renderizarFiltroFaixas() {
+  const select = document.getElementById("filtroFaixa");
+  const atual = select.value || "todas";
+  const faixas = ["todas", ...new Set(alunos.map(a => a.faixaEtaria))];
+  select.innerHTML = faixas.map(f => `<option value="${f}">${f === "todas" ? "Todas as faixas etárias" : f}</option>`).join("");
+  select.value = faixas.includes(atual) ? atual : "todas";
+}
+
+function renderizarAlunos() {
+  const busca = document.getElementById("campoBusca").value.toLowerCase();
+  const filtroFaixa = document.getElementById("filtroFaixa").value || "todas";
+
+  const filtrados = alunos.filter(a =>
+    a.nome.toLowerCase().includes(busca) && (filtroFaixa === "todas" || a.faixaEtaria === filtroFaixa)
+  );
+
+  document.getElementById("listaAlunos").innerHTML = filtrados.map(aluno => `
+    <div class="prancheta">
+      <div class="prancheta-clipe"></div>
+      <div class="prancheta-cabecalho">
+        <div class="avatar">${iniciais(aluno.nome)}</div>
+        <div class="prancheta-titulo">
+          <h3>${aluno.nome} ${aluno.inadimplente ? '<span class="selo-inadimplente">Inadimplente — check-in bloqueado</span>' : ""}</h3>
+          <p class="prancheta-sub">${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}${aluno.ultimoLembrete ? " · último lembrete: " + aluno.ultimoLembrete : ""}</p>
+        </div>
+        <button class="botao-lembrete" data-abrir-lembrete="${aluno.id}">Notificar treino</button>
+        <button class="botao-whatsapp" data-whatsapp="${aluno.id}">WhatsApp</button>
+        <button class="botao-chat" data-abrir-chat="${aluno.id}">Chat</button>
+        <button class="botao-chat" data-editar-aluno="${aluno.id}">Editar</button>
+        <button class="${aluno.inadimplente ? "botao-regularizar" : "botao-inadimplente"}" data-alternar-inadimplencia="${aluno.id}">
+          ${aluno.inadimplente ? "Regularizar" : "Marcar inadimplente"}
+        </button>
+        <button class="botao-excluir" data-excluir-aluno="${aluno.id}">Excluir</button>
+      </div>
+
+      <div class="prancheta-tags">
+        ${aluno.comorbidades.length === 0
+          ? `<span class="selo selo-neutro">Sem comorbidades registradas</span>`
+          : aluno.comorbidades.map(c => `<span class="selo selo-atencao">${c}</span>`).join("")}
+      </div>
+
+      <p class="prancheta-suplemento"><strong>Suplementação:</strong> ${aluno.suplementacao}</p>
+
+      <table class="tabela-exercicios">
+        <thead><tr><th>Exercício</th><th>Data</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${aluno.exercicios.map(ex => `
+            <tr>
+              <td>${ex.nome}</td>
+              <td class="col-data">${ex.data}</td>
+              <td>
+                <select class="status-select" style="color:${STATUS_INFO[ex.status].cor};background:${STATUS_INFO[ex.status].bg}"
+                  data-mudar-status="${aluno.id}|${ex.id}">
+                  <option value="realizado" ${ex.status === "realizado" ? "selected" : ""}>Realizado</option>
+                  <option value="a realizar" ${ex.status === "a realizar" ? "selected" : ""}>A realizar</option>
+                  <option value="pendente" ${ex.status === "pendente" ? "selected" : ""}>Pendente</option>
+                </select>
+              </td>
+              <td class="col-acao">
+                <button class="botao-notificar" data-notificar-exercicio="${aluno.id}|${ex.id}">Notificar</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <button class="botao-adicionar-exercicio" data-abrir-form-exercicio="${aluno.id}">+ Adicionar exercício</button>
+      <div class="mini-form-exercicio" id="formExercicio-${aluno.id}">
+        <input placeholder="Nome do exercício" id="nomeExercicio-${aluno.id}" />
+        <input placeholder="Data (ex: 10/09)" id="dataExercicio-${aluno.id}" />
+        <button class="botao-lembrete" data-salvar-exercicio="${aluno.id}">Salvar</button>
+        <button class="fechar" data-fechar-form-exercicio="${aluno.id}">×</button>
+      </div>
+    </div>
+  `).join("") || `<p style="text-align:center;color:var(--ink-soft);font-size:14px">Nenhum aluno encontrado. Cadastre o primeiro aluno acima.</p>`;
+
+  // eventos dos elementos recém-criados (escopados a #listaAlunos para não duplicar
+  // os listeners dos botões "Notificar" que já existem na tela de pendências)
+  const containerAlunos = document.getElementById("listaAlunos");
+  containerAlunos.querySelectorAll("[data-abrir-lembrete]").forEach(btn =>
+    btn.addEventListener("click", () => abrirLembrete(Number(btn.dataset.abrirLembrete))));
+  containerAlunos.querySelectorAll("[data-abrir-chat]").forEach(btn =>
+    btn.addEventListener("click", () => abrirChat(Number(btn.dataset.abrirChat))));
+  containerAlunos.querySelectorAll("[data-editar-aluno]").forEach(btn =>
+    btn.addEventListener("click", () => abrirEdicaoAluno(Number(btn.dataset.editarAluno))));
+  containerAlunos.querySelectorAll("[data-alternar-inadimplencia]").forEach(btn =>
+    btn.addEventListener("click", () => alternarInadimplencia(Number(btn.dataset.alternarInadimplencia))));
+  containerAlunos.querySelectorAll("[data-whatsapp]").forEach(btn =>
+    btn.addEventListener("click", () => abrirWhatsApp(Number(btn.dataset.whatsapp))));
+  containerAlunos.querySelectorAll("[data-notificar-exercicio]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const [alunoId, exercicioId] = btn.dataset.notificarExercicio.split("|");
+      abrirLembrete(Number(alunoId), exercicioId);
+    }));
+  containerAlunos.querySelectorAll("[data-excluir-aluno]").forEach(btn =>
+    btn.addEventListener("click", () => excluirAluno(Number(btn.dataset.excluirAluno))));
+  containerAlunos.querySelectorAll("[data-mudar-status]").forEach(sel =>
+    sel.addEventListener("change", () => {
+      const [alunoId, exercicioId] = sel.dataset.mudarStatus.split("|");
+      mudarStatusExercicio(Number(alunoId), exercicioId, sel.value);
+    }));
+  containerAlunos.querySelectorAll("[data-abrir-form-exercicio]").forEach(btn =>
+    btn.addEventListener("click", () => document.getElementById("formExercicio-" + btn.dataset.abrirFormExercicio).classList.add("aberto")));
+  containerAlunos.querySelectorAll("[data-fechar-form-exercicio]").forEach(btn =>
+    btn.addEventListener("click", () => document.getElementById("formExercicio-" + btn.dataset.fecharFormExercicio).classList.remove("aberto")));
+  containerAlunos.querySelectorAll("[data-salvar-exercicio]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const alunoId = Number(btn.dataset.salvarExercicio);
+      const nome = document.getElementById("nomeExercicio-" + alunoId).value.trim();
+      const data = document.getElementById("dataExercicio-" + alunoId).value.trim();
+      if (!nome) return;
+      adicionarExercicio(alunoId, nome, data);
+    }));
+}
+
+function abrirLembrete(alunoId, exercicioId) {
+  alunoLembreteAtual = alunoId;
+  const aluno = alunos.find(a => a.id === alunoId);
+  const alvo = exercicioId
+    ? aluno.exercicios.find(e => e.id === exercicioId)
+    : (aluno.exercicios.find(e => e.status === "a realizar") || aluno.exercicios[0]);
+  const mensagem = `Olá, ${aluno.nome.split(" ")[0]}! Passando para lembrar do seu treino: "${alvo ? alvo.nome : "consulte sua prancheta"}"${alvo && alvo.data ? " (data: " + alvo.data + ")" : ""}. Não esqueça da suplementação (${aluno.suplementacao}) conforme orientação de ${aluno.professor}. Qualquer dúvida, fale com seu professor antes de iniciar.`;
+  document.getElementById("tituloLembrete").textContent = "Notificar treino de " + aluno.nome.split(" ")[0];
+  document.getElementById("mensagemLembrete").textContent = mensagem;
+  document.getElementById("rodapeLembrete").innerHTML =
+    `<button class="botao-primario" id="btnConfirmarLembrete">Notificar por chat + WhatsApp</button>`;
+  document.getElementById("btnConfirmarLembrete").addEventListener("click", () => confirmarEnvioLembrete(alunoId, mensagem));
+  abrirModal("modalLembrete");
+}
+
+/* ---------------- chat ---------------- */
+
+function abrirChat(alunoId) {
+  alunoChatAtual = alunoId;
+  const aluno = alunos.find(a => a.id === alunoId);
+  document.getElementById("tituloChat").textContent = "Chat com " + aluno.nome.split(" ")[0];
+  document.getElementById("chatTexto").value = "";
+  renderizarChat(alunoId);
+  abrirModal("modalChat");
+}
+
+function renderizarChat(alunoId) {
+  const aluno = alunos.find(a => a.id === alunoId);
+  const mensagens = aluno.mensagens || [];
+  const lista = document.getElementById("chatMensagens");
+  lista.innerHTML = mensagens.length
+    ? mensagens.map(m => `
+        <div class="chat-bolha ${m.remetente === "professor" ? "chat-bolha-professor" : "chat-bolha-sistema"}">
+          ${m.texto}
+          <span class="chat-hora">${m.hora}</span>
+        </div>
+      `).join("")
+    : `<p class="chat-vazio">Nenhuma mensagem enviada a ${aluno.nome.split(" ")[0]} ainda.</p>`;
+  lista.scrollTop = lista.scrollHeight;
+}
+
+/* ---------------- cadastro / edição ---------------- */
+
+let alunoEditandoId = null;
+
+document.getElementById("formIdade").addEventListener("input", (e) => {
+  document.getElementById("formFaixaCalculada").value = e.target.value ? calcularFaixaEtaria(e.target.value) : "—";
+});
+
+function limparFormularioCadastro() {
+  ["formNome", "formIdade", "formProfessor", "formTelefone", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("formFaixaCalculada").value = "—";
+  document.getElementById("erroCadastro").classList.add("oculto");
+}
+
+function abrirCadastroNovoAluno() {
+  alunoEditandoId = null;
+  limparFormularioCadastro();
+  document.getElementById("tituloModalCadastro").textContent = "Cadastrar novo aluno";
+  document.getElementById("btnSalvarCadastro").textContent = "Cadastrar aluno";
+  abrirModal("modalCadastro");
+}
+
+function abrirEdicaoAluno(alunoId) {
+  const aluno = alunos.find(a => a.id === alunoId);
+  if (!aluno) return;
+  alunoEditandoId = alunoId;
+  document.getElementById("erroCadastro").classList.add("oculto");
+  document.getElementById("tituloModalCadastro").textContent = "Editar cadastro de " + aluno.nome.split(" ")[0];
+  document.getElementById("btnSalvarCadastro").textContent = "Salvar alterações";
+  document.getElementById("formNome").value = aluno.nome;
+  document.getElementById("formIdade").value = aluno.idade;
+  document.getElementById("formFaixaCalculada").value = aluno.faixaEtaria;
+  document.getElementById("formProfessor").value = aluno.professor;
+  document.getElementById("formTelefone").value = aluno.telefone || "";
+  document.getElementById("formComorbidades").value = (aluno.comorbidades || []).join(", ");
+  document.getElementById("formSuplementacao").value = aluno.suplementacao;
+  abrirModal("modalCadastro");
+}
+
+document.getElementById("btnSalvarCadastro").addEventListener("click", () => {
+  const nome = document.getElementById("formNome").value.trim();
+  const idade = document.getElementById("formIdade").value;
+  const erroEl = document.getElementById("erroCadastro");
+
+  if (!nome || !idade) {
+    erroEl.textContent = "Preencha ao menos nome e idade.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  erroEl.classList.add("oculto");
+
+  const comorbidades = document.getElementById("formComorbidades").value
+    .split(",").map(c => c.trim()).filter(Boolean);
+
+  const dados = {
+    nome,
+    idade: Number(idade),
+    faixaEtaria: calcularFaixaEtaria(idade),
+    professor: document.getElementById("formProfessor").value.trim() || "A definir",
+    telefone: document.getElementById("formTelefone").value.replace(/\D/g, ""),
+    comorbidades,
+    suplementacao: document.getElementById("formSuplementacao").value.trim() || "Nenhuma prescrita",
+  };
+
+  if (alunoEditandoId) {
+    atualizarAluno(alunoEditandoId, dados);
+    mostrarStatus("Cadastro atualizado com sucesso.", "ok");
+  } else {
+    cadastrarAluno(dados);
+    mostrarStatus("Aluno cadastrado com sucesso.", "ok");
+  }
+
+  alunoEditandoId = null;
+  limparFormularioCadastro();
+  fecharModal("modalCadastro");
+});
+
+/* ---------------- financeiro: lançamento manual / edição ---------------- */
+
+let lancamentoEditandoId = null;
+
+function preencherSelectAlunoLancamento(selecionado) {
+  document.getElementById("lancAluno").innerHTML =
+    `<option value="">Nenhum</option>` + alunos.map(a => `<option value="${a.id}" ${a.id === selecionado ? "selected" : ""}>${a.nome}</option>`).join("");
+}
+
+document.getElementById("btnNovoLancamento").addEventListener("click", () => {
+  lancamentoEditandoId = null;
+  document.getElementById("tituloModalLancamento").textContent = "Novo lançamento";
+  document.getElementById("btnSalvarLancamento").textContent = "Salvar lançamento";
+  document.getElementById("lancTipo").value = "receita";
+  document.getElementById("lancStatus").value = "pendente";
+  document.getElementById("lancDescricao").value = "";
+  document.getElementById("lancValor").value = "";
+  document.getElementById("lancData").value = new Date().toISOString().slice(0, 10);
+  preencherSelectAlunoLancamento(null);
+  document.getElementById("lancCentroCusto").innerHTML = opcoesPlanoDeContas("Mensalidades");
+  document.getElementById("erroLancamento").classList.add("oculto");
+  abrirModal("modalLancamento");
+});
+
+function abrirEdicaoLancamento(id) {
+  const l = lancamentos.find(x => x.id === id);
+  if (!l) return;
+  lancamentoEditandoId = id;
+  document.getElementById("tituloModalLancamento").textContent = "Editar lançamento";
+  document.getElementById("btnSalvarLancamento").textContent = "Salvar alterações";
+  document.getElementById("lancTipo").value = l.tipo;
+  document.getElementById("lancStatus").value = l.status;
+  document.getElementById("lancDescricao").value = l.descricao;
+  document.getElementById("lancValor").value = l.valor;
+  document.getElementById("lancData").value = l.data || new Date().toISOString().slice(0, 10);
+  preencherSelectAlunoLancamento(l.alunoId || null);
+  document.getElementById("lancCentroCusto").innerHTML = opcoesPlanoDeContas(l.centroCusto);
+  document.getElementById("erroLancamento").classList.add("oculto");
+  abrirModal("modalLancamento");
+}
+
+document.getElementById("btnSalvarLancamento").addEventListener("click", () => {
+  const descricao = document.getElementById("lancDescricao").value.trim();
+  const valor = parseFloat(document.getElementById("lancValor").value);
+  const erroEl = document.getElementById("erroLancamento");
+  if (!descricao || !valor || valor <= 0) {
+    erroEl.textContent = "Preencha a descrição e um valor válido.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  erroEl.classList.add("oculto");
+  const alunoIdSel = document.getElementById("lancAluno").value;
+  const dados = {
+    tipo: document.getElementById("lancTipo").value,
+    status: document.getElementById("lancStatus").value,
+    descricao,
+    valor,
+    data: document.getElementById("lancData").value || new Date().toISOString().slice(0, 10),
+    alunoId: alunoIdSel ? Number(alunoIdSel) : null,
+    centroCusto: document.getElementById("lancCentroCusto").value,
+  };
+
+  if (lancamentoEditandoId) {
+    persistirFinanceiro(lancamentos.map(l => l.id === lancamentoEditandoId ? { ...l, ...dados } : l));
+    mostrarStatus("Lançamento atualizado.", "ok");
+  } else {
+    adicionarLancamento(dados);
+    mostrarStatus("Lançamento salvo.", "ok");
+  }
+  lancamentoEditandoId = null;
+  fecharModal("modalLancamento");
+});
+
+/* ---------------- financeiro: importação de extrato .OFX ---------------- */
+
+function parseOFX(texto) {
+  const blocos = texto.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) || [];
+  return blocos.map((bloco, i) => {
+    const pega = (tag) => {
+      const m = bloco.match(new RegExp("<" + tag + ">([^<\\r\\n]+)", "i"));
+      return m ? m[1].trim() : "";
+    };
+    const valor = parseFloat(pega("TRNAMT").replace(",", ".")) || 0;
+    const dtRaw = pega("DTPOSTED");
+    const dataISO = dtRaw.length >= 8 ? `${dtRaw.slice(0, 4)}-${dtRaw.slice(4, 6)}-${dtRaw.slice(6, 8)}` : "";
+    const descricao = pega("NAME") || pega("MEMO") || "Transação sem descrição";
+    return {
+      data: dataISO,
+      valor: Math.abs(valor),
+      tipo: valor >= 0 ? "receita" : "despesa",
+      descricao,
+    };
+  });
+}
+
+function encontrarAlunoPorNome(descricao) {
+  const descLower = descricao.toLowerCase();
+  return alunos.find(a =>
+    descLower.includes(a.nome.toLowerCase()) ||
+    a.nome.toLowerCase().split(" ").some(parte => parte.length > 3 && descLower.includes(parte))
+  );
+}
+
+let transacoesOfxParaImportar = [];
+
+function renderizarPreviaOfx() {
+  const opcoesAlunos = (selecionado) =>
+    `<option value="">Nenhum</option>` + alunos.map(a => `<option value="${a.id}" ${a.id === selecionado ? "selected" : ""}>${a.nome}</option>`).join("");
+
+  document.getElementById("previaOfx").innerHTML = `
+    <table>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Centro de custo</th><th>Aluno</th></tr></thead>
+      <tbody>
+        ${transacoesOfxParaImportar.map((t, i) => `
+          <tr>
+            <td>${formatarDataBR(t.data)}</td>
+            <td>${t.descricao}</td>
+            <td>${t.tipo === "receita" ? "Receita" : "Despesa"}</td>
+            <td>${formatarMoeda(t.valor)}</td>
+            <td><select data-ofx-centro="${i}">${opcoesPlanoDeContas(t.centroCusto)}</select></td>
+            <td><select data-ofx-aluno="${i}">${opcoesAlunos(t.alunoId)}</select></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+  document.querySelectorAll("#previaOfx [data-ofx-aluno]").forEach(sel =>
+    sel.addEventListener("change", () => {
+      transacoesOfxParaImportar[Number(sel.dataset.ofxAluno)].alunoId = sel.value ? Number(sel.value) : "";
+    }));
+  document.querySelectorAll("#previaOfx [data-ofx-centro]").forEach(sel =>
+    sel.addEventListener("change", () => {
+      transacoesOfxParaImportar[Number(sel.dataset.ofxCentro)].centroCusto = sel.value;
+    }));
+}
+
+document.getElementById("inputOfx").addEventListener("change", (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    const transacoes = parseOFX(leitor.result);
+    if (!transacoes.length) {
+      mostrarStatus("Não encontramos transações reconhecíveis nesse arquivo .OFX.", "erro");
+      return;
+    }
+    transacoesOfxParaImportar = transacoes.map(t => ({
+      ...t,
+      alunoId: (encontrarAlunoPorNome(t.descricao) || {}).id || "",
+      centroCusto: sugerirCentroCusto(t.descricao, t.tipo),
+    }));
+    renderizarPreviaOfx();
+    abrirModal("modalOfx");
+  };
+  leitor.onerror = () => mostrarStatus("Não foi possível ler o arquivo .OFX.", "erro");
+  leitor.readAsText(arquivo);
+  e.target.value = "";
+});
+
+document.getElementById("btnConfirmarOfx").addEventListener("click", () => {
+  if (!transacoesOfxParaImportar.length) { fecharModal("modalOfx"); return; }
+  const proxId = lancamentos.length ? Math.max(...lancamentos.map(l => l.id)) + 1 : 1;
+  const novos = transacoesOfxParaImportar.map((t, i) => ({
+    id: proxId + i,
+    tipo: t.tipo,
+    descricao: t.descricao,
+    valor: t.valor,
+    data: t.data,
+    status: "pago",
+    alunoId: t.alunoId || null,
+    centroCusto: t.centroCusto,
+    origem: "ofx",
+  }));
+  persistirFinanceiro([...lancamentos, ...novos]);
+  transacoesOfxParaImportar = [];
+  fecharModal("modalOfx");
+  mostrarStatus(`${novos.length} lançamento(s) importado(s) do OFX.`, "ok");
+});
+
+/* ---------------- gastos recorrentes: modal ---------------- */
+
+let recorrenteEditandoId = null;
+
+document.getElementById("btnNovoRecorrente").addEventListener("click", () => {
+  recorrenteEditandoId = null;
+  document.getElementById("tituloModalRecorrente").textContent = "Novo gasto recorrente";
+  document.getElementById("btnSalvarRecorrente").textContent = "Salvar gasto recorrente";
+  document.getElementById("recDescricao").value = "";
+  document.getElementById("recValor").value = "";
+  document.getElementById("recDiaVencimento").value = "";
+  document.getElementById("recCentroCusto").innerHTML = opcoesPlanoDeContas("Água");
+  document.getElementById("recAtivo").checked = true;
+  document.getElementById("erroRecorrente").classList.add("oculto");
+  abrirModal("modalRecorrente");
+});
+
+function abrirEdicaoRecorrente(id) {
+  const r = recorrentes.find(x => x.id === id);
+  if (!r) return;
+  recorrenteEditandoId = id;
+  document.getElementById("tituloModalRecorrente").textContent = "Editar gasto recorrente";
+  document.getElementById("btnSalvarRecorrente").textContent = "Salvar alterações";
+  document.getElementById("recDescricao").value = r.descricao;
+  document.getElementById("recValor").value = r.valor;
+  document.getElementById("recDiaVencimento").value = r.diaVencimento;
+  document.getElementById("recCentroCusto").innerHTML = opcoesPlanoDeContas(r.centroCusto);
+  document.getElementById("recAtivo").checked = r.ativo;
+  document.getElementById("erroRecorrente").classList.add("oculto");
+  abrirModal("modalRecorrente");
+}
+
+document.getElementById("btnSalvarRecorrente").addEventListener("click", () => {
+  const descricao = document.getElementById("recDescricao").value.trim();
+  const valor = parseFloat(document.getElementById("recValor").value);
+  const dia = parseInt(document.getElementById("recDiaVencimento").value, 10);
+  const erroEl = document.getElementById("erroRecorrente");
+  if (!descricao || !valor || valor <= 0 || !dia || dia < 1 || dia > 31) {
+    erroEl.textContent = "Preencha descrição, valor e um dia de vencimento válido (1 a 31).";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  erroEl.classList.add("oculto");
+  const dados = {
+    descricao,
+    valor,
+    diaVencimento: dia,
+    centroCusto: document.getElementById("recCentroCusto").value,
+    ativo: document.getElementById("recAtivo").checked,
+  };
+
+  if (recorrenteEditandoId) {
+    persistirRecorrentes(recorrentes.map(r => r.id === recorrenteEditandoId ? { ...r, ...dados } : r));
+    mostrarStatus("Gasto recorrente atualizado.", "ok");
+  } else {
+    const novoId = recorrentes.length ? Math.max(...recorrentes.map(r => r.id)) + 1 : 1;
+    persistirRecorrentes([...recorrentes, { id: novoId, ...dados }]);
+    mostrarStatus("Gasto recorrente cadastrado.", "ok");
+  }
+  recorrenteEditandoId = null;
+  fecharModal("modalRecorrente");
+});
+
+document.getElementById("btnGerarRecorrentes").addEventListener("click", gerarLancamentosRecorrentesDoMes);
+
+/* ---------------- eventos gerais ---------------- */
+
+document.getElementById("btnAbrirCadastro").addEventListener("click", abrirCadastroNovoAluno);
+document.getElementById("btnEnviarChat").addEventListener("click", () => {
+  const texto = document.getElementById("chatTexto").value.trim();
+  if (!texto || !alunoChatAtual) return;
+  enviarMensagemChat(alunoChatAtual, texto);
+  document.getElementById("chatTexto").value = "";
+  renderizarChat(alunoChatAtual);
+});
+document.querySelectorAll("[data-fechar-modal]").forEach(btn =>
+  btn.addEventListener("click", () => fecharModal(btn.dataset.fecharModal)));
+document.querySelectorAll(".sobreposicao").forEach(overlay =>
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("aberta"); }));
+
+document.querySelectorAll("[data-tela]").forEach(btn =>
+  btn.addEventListener("click", () => mostrarTela(btn.dataset.tela)));
+document.querySelectorAll("[data-cardapio]").forEach(btn =>
+  btn.addEventListener("click", () => renderizarCardapio(btn.dataset.cardapio)));
+
+document.getElementById("campoBusca").addEventListener("input", renderizarAlunos);
+document.getElementById("filtroFaixa").addEventListener("change", renderizarAlunos);
+document.getElementById("btnAtualizarSistema").addEventListener("click", async () => {
+  const btn = document.getElementById("btnAtualizarSistema");
+  btn.disabled = true;
+  btn.textContent = "Atualizando...";
+  try {
+    await recalcularInadimplencia();
+  } catch (e) {
+    mostrarStatus("Erro ao recalcular inadimplência: " + (e.code || e.message), "erro");
+  }
+  location.reload();
+});
+
+document.getElementById("btnRestaurar").addEventListener("click", () => {
+  if (!confirm("Restaurar os dados de exemplo? Isso substitui todos os alunos cadastrados atualmente.")) return;
+  persistir(ALUNOS_INICIAIS);
+});
+
+/* ---------------- inicialização ---------------- */
+
+document.getElementById("btnEntrar").addEventListener("click", tentarEntrar);
+document.getElementById("loginSenha").addEventListener("keydown", (e) => { if (e.key === "Enter") tentarEntrar(); });
+document.getElementById("btnSair").addEventListener("click", encerrarSessao);
+
+async function tentarEntrar() {
+  const email = document.getElementById("loginUsuario").value;
+  const senha = document.getElementById("loginSenha").value;
+  const erroEl = document.getElementById("erroLogin");
+  const btn = document.getElementById("btnEntrar");
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+  const encontrado = await tentarLogin(email, senha);
+  btn.disabled = false;
+  btn.textContent = "Entrar";
+  if (!encontrado) {
+    erroEl.textContent = "E-mail ou senha inválidos.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  erroEl.classList.add("oculto");
+  // onAuthStateChanged cuida de mostrar o app automaticamente
+}
+
+const parametrosURL = new URLSearchParams(location.search);
+const checkinNaURL = parametrosURL.get("checkin");
+if (checkinNaURL === "geral") emFluxoCheckinGeral = true;
+
+if (checkinNaURL === "geral") {
+  iniciarCheckinGeral();
+}
+// Caso não seja check-in, onAuthStateChanged (registrado acima) já
+// mostra a tela de login ou o app automaticamente.
+</script>
+</body>
+</html>
