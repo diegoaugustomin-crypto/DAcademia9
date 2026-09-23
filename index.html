@@ -326,9 +326,11 @@
       <h1 id="checkinTitulo">Check-in Academia Pró</h1>
       <p class="legenda-login" id="checkinMensagem"></p>
       <div class="campo-form" id="checkinBuscaWrap" style="text-align:left;">
-        <input id="checkinBusca" placeholder="Buscar seu nome..." />
+        <label>Matrícula</label>
+        <input id="checkinMatricula" placeholder="Digite sua matrícula" inputmode="numeric" autocomplete="off" />
       </div>
-      <div class="checkin-lista" id="checkinListaAlunos"></div>
+      <button class="botao-primario" id="btnConfirmarMatricula" style="width:100%; margin-top:10px;">Fazer check-in</button>
+      <p class="erro-form oculto" id="erroCheckinMatricula"></p>
     </div>
   </div>
 
@@ -568,13 +570,17 @@
       </div>
       <div class="campo-form-linha">
         <div class="campo-form">
+          <label>Matrícula (usada no check-in)</label>
+          <input id="formMatricula" placeholder="Gerada automaticamente" />
+        </div>
+        <div class="campo-form">
           <label>Idade</label>
           <input id="formIdade" type="number" min="0" placeholder="Ex: 34" />
         </div>
-        <div class="campo-form">
-          <label>Faixa etária</label>
-          <input id="formFaixaCalculada" disabled value="—" />
-        </div>
+      </div>
+      <div class="campo-form">
+        <label>Faixa etária</label>
+        <input id="formFaixaCalculada" disabled value="—" />
       </div>
       <div class="campo-form">
         <label>Professor(a) responsável</label>
@@ -857,7 +863,7 @@ async function sincronizarColecao(refColecao, listaAtual, listaNova) {
 
 const ALUNOS_INICIAIS = [
   {
-    id: 1, nome: "Marlene Aparecida Souza", idade: 68, faixaEtaria: "Idoso (60+)",
+    id: 1, nome: "Marlene Aparecida Souza", matricula: "1001", idade: 68, faixaEtaria: "Idoso (60+)",
     telefone: "5562988880001",
     comorbidades: ["Hipertensão", "Osteoporose"], professor: "Rafael Nogueira",
     suplementacao: "Whey isolado, 20g pós-treino",
@@ -869,7 +875,7 @@ const ALUNOS_INICIAIS = [
     ],
   },
   {
-    id: 2, nome: "Diego Ferreira Lima", idade: 24, faixaEtaria: "Adulto jovem (18–29)",
+    id: 2, nome: "Diego Ferreira Lima", matricula: "1002", idade: 24, faixaEtaria: "Adulto jovem (18–29)",
     telefone: "5562988880002",
     comorbidades: [], professor: "Camila Duarte", suplementacao: "Creatina, 5g ao dia",
     exercicios: [
@@ -879,7 +885,7 @@ const ALUNOS_INICIAIS = [
     ],
   },
   {
-    id: 3, nome: "Iolanda Prestes Cardoso", idade: 55, faixaEtaria: "Meia-idade (45–59)",
+    id: 3, nome: "Iolanda Prestes Cardoso", matricula: "1003", idade: 55, faixaEtaria: "Meia-idade (45–59)",
     telefone: "5562988880003",
     comorbidades: ["Diabetes tipo 2", "Artrose no joelho"], professor: "Rafael Nogueira",
     suplementacao: "Ômega 3, 1 cápsula no almoço",
@@ -1628,39 +1634,50 @@ async function confirmarCheckinRecepcao(alunoId) {
 
 document.getElementById("recepcaoBusca").addEventListener("input", (e) => renderizarRecepcaoCheckin(e.target.value));
 
+let alunosCarregadosParaCheckin = [];
+
 async function iniciarCheckinGeral() {
   document.getElementById("telaLogin").classList.add("oculto");
   document.getElementById("appConteudo").classList.add("oculto");
   document.getElementById("telaConfirmacaoCheckin").classList.remove("oculto");
-  document.getElementById("checkinMensagem").textContent = "Carregando lista de alunos...";
+  document.getElementById("checkinMensagem").textContent = "Carregando sistema...";
 
   try {
-    const listaAlunos = await buscarAlunosViaRest();
-    document.getElementById("checkinMensagem").textContent = listaAlunos.length
-      ? "Toque no seu nome para registrar sua presença"
-      : "Nenhum aluno cadastrado ainda no sistema.";
-    renderizarListaCheckinGeral(listaAlunos, "");
-    document.getElementById("checkinBusca").oninput = (e) => renderizarListaCheckinGeral(listaAlunos, e.target.value);
+    alunosCarregadosParaCheckin = await buscarAlunosViaRest();
+    document.getElementById("checkinMensagem").textContent = "Digite sua matrícula para registrar a presença";
+    document.getElementById("checkinMatricula").focus();
   } catch (e) {
-    document.getElementById("checkinTitulo").textContent = "Não foi possível carregar a lista";
+    document.getElementById("checkinTitulo").textContent = "Não foi possível carregar o sistema";
     document.getElementById("checkinMensagem").textContent = "Erro técnico: " + (e.message || "desconhecido") + " — fale com a recepção.";
   }
 }
 
-function renderizarListaCheckinGeral(alunosCarregados, filtro) {
-  const lista = document.getElementById("checkinListaAlunos");
-  const filtrados = alunosCarregados.filter(a => a.nome.toLowerCase().includes(filtro.trim().toLowerCase()));
-  lista.innerHTML = filtrados.length
-    ? filtrados.map(a => `<button class="checkin-item" data-checkin-aluno="${a.id}">${a.nome}</button>`).join("")
-    : `<p class="chat-vazio">Nenhum aluno encontrado.</p>`;
-  lista.querySelectorAll("[data-checkin-aluno]").forEach(btn =>
-    btn.addEventListener("click", () => confirmarCheckinGeral(Number(btn.dataset.checkinAluno), alunosCarregados)));
+document.getElementById("btnConfirmarMatricula").addEventListener("click", tentarCheckinPorMatricula);
+document.getElementById("checkinMatricula").addEventListener("keydown", (e) => { if (e.key === "Enter") tentarCheckinPorMatricula(); });
+
+function tentarCheckinPorMatricula() {
+  const valor = document.getElementById("checkinMatricula").value.trim();
+  const erroEl = document.getElementById("erroCheckinMatricula");
+  if (!valor) {
+    erroEl.textContent = "Digite sua matrícula.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  const aluno = alunosCarregadosParaCheckin.find(a => String(a.matricula || "").trim() === valor);
+  if (!aluno) {
+    erroEl.textContent = "Matrícula não encontrada. Confira o número ou fale com a recepção.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  erroEl.classList.add("oculto");
+  confirmarCheckinGeral(aluno.id, alunosCarregadosParaCheckin);
 }
 
 async function confirmarCheckinGeral(alunoId, alunosCarregados) {
   const aluno = alunosCarregados.find(a => a.id === alunoId);
   document.getElementById("checkinBuscaWrap").classList.add("oculto");
-  document.getElementById("checkinListaAlunos").classList.add("oculto");
+  document.getElementById("btnConfirmarMatricula").classList.add("oculto");
+  document.getElementById("erroCheckinMatricula").classList.add("oculto");
 
   if (aluno.inadimplente) {
     document.getElementById("checkinTitulo").textContent = "Check-in bloqueado";
@@ -1840,7 +1857,7 @@ function renderizarAlunos() {
         <div class="avatar">${iniciais(aluno.nome)}</div>
         <div class="prancheta-titulo">
           <h3>${aluno.nome} ${aluno.inadimplente ? '<span class="selo-inadimplente">Inadimplente — check-in bloqueado</span>' : ""}</h3>
-          <p class="prancheta-sub">${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}${aluno.ultimoLembrete ? " · último lembrete: " + aluno.ultimoLembrete : ""}</p>
+          <p class="prancheta-sub">Matrícula ${aluno.matricula || "—"} · ${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}${aluno.ultimoLembrete ? " · último lembrete: " + aluno.ultimoLembrete : ""}</p>
         </div>
         <button class="botao-lembrete" data-abrir-lembrete="${aluno.id}">Notificar treino</button>
         <button class="botao-whatsapp" data-whatsapp="${aluno.id}">WhatsApp</button>
@@ -1977,12 +1994,21 @@ function renderizarChat(alunoId) {
 
 let alunoEditandoId = null;
 
+function gerarMatriculaUnica() {
+  const existentes = new Set(alunos.map(a => String(a.matricula || "")));
+  let tentativa;
+  do {
+    tentativa = String(Math.floor(1000 + Math.random() * 9000));
+  } while (existentes.has(tentativa));
+  return tentativa;
+}
+
 document.getElementById("formIdade").addEventListener("input", (e) => {
   document.getElementById("formFaixaCalculada").value = e.target.value ? calcularFaixaEtaria(e.target.value) : "—";
 });
 
 function limparFormularioCadastro() {
-  ["formNome", "formIdade", "formProfessor", "formTelefone", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
+  ["formNome", "formMatricula", "formIdade", "formProfessor", "formTelefone", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("formFaixaCalculada").value = "—";
   document.getElementById("erroCadastro").classList.add("oculto");
 }
@@ -1990,6 +2016,7 @@ function limparFormularioCadastro() {
 function abrirCadastroNovoAluno() {
   alunoEditandoId = null;
   limparFormularioCadastro();
+  document.getElementById("formMatricula").value = gerarMatriculaUnica();
   document.getElementById("tituloModalCadastro").textContent = "Cadastrar novo aluno";
   document.getElementById("btnSalvarCadastro").textContent = "Cadastrar aluno";
   abrirModal("modalCadastro");
@@ -2003,6 +2030,7 @@ function abrirEdicaoAluno(alunoId) {
   document.getElementById("tituloModalCadastro").textContent = "Editar cadastro de " + aluno.nome.split(" ")[0];
   document.getElementById("btnSalvarCadastro").textContent = "Salvar alterações";
   document.getElementById("formNome").value = aluno.nome;
+  document.getElementById("formMatricula").value = aluno.matricula || gerarMatriculaUnica();
   document.getElementById("formIdade").value = aluno.idade;
   document.getElementById("formFaixaCalculada").value = aluno.faixaEtaria;
   document.getElementById("formProfessor").value = aluno.professor;
@@ -2015,10 +2043,17 @@ function abrirEdicaoAluno(alunoId) {
 document.getElementById("btnSalvarCadastro").addEventListener("click", () => {
   const nome = document.getElementById("formNome").value.trim();
   const idade = document.getElementById("formIdade").value;
+  const matricula = document.getElementById("formMatricula").value.trim();
   const erroEl = document.getElementById("erroCadastro");
 
-  if (!nome || !idade) {
-    erroEl.textContent = "Preencha ao menos nome e idade.";
+  if (!nome || !idade || !matricula) {
+    erroEl.textContent = "Preencha nome, idade e matrícula.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+  const conflito = alunos.find(a => String(a.matricula) === matricula && a.id !== alunoEditandoId);
+  if (conflito) {
+    erroEl.textContent = `Essa matrícula já pertence a ${conflito.nome}. Use outra.`;
     erroEl.classList.remove("oculto");
     return;
   }
@@ -2029,6 +2064,7 @@ document.getElementById("btnSalvarCadastro").addEventListener("click", () => {
 
   const dados = {
     nome,
+    matricula,
     idade: Number(idade),
     faixaEtaria: calcularFaixaEtaria(idade),
     professor: document.getElementById("formProfessor").value.trim() || "A definir",
