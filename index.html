@@ -6,15 +6,16 @@
 <title>Academia Pró — Painel do Professor</title>
 <style>
   :root {
-    --paper: #FBFAF6;
-    --paper-line: #E4DFD2;
-    --ink: #22302C;
-    --ink-soft: #5B655F;
-    --primary: #2B5D56;
-    --primary-dark: #1D423C;
-    --sage: #4C7A52; --sage-bg: #E7EFE3;
-    --amber: #A9700E; --amber-bg: #F6E9CF;
-    --rust: #A24230; --rust-bg: #F4E1DA;
+    --paper: #0B0B0C;
+    --surface: #18150E;
+    --paper-line: #3A3120;
+    --ink: #F1E9D8;
+    --ink-soft: #B8AD95;
+    --primary: #D4AF37;
+    --primary-dark: #B8941F;
+    --sage: #6FBF73; --sage-bg: rgba(111,191,115,0.14);
+    --amber: #E8B94D; --amber-bg: rgba(232,185,77,0.14);
+    --rust: #E2665A; --rust-bg: rgba(226,102,90,0.14);
   }
   * { box-sizing: border-box; }
   body {
@@ -24,7 +25,18 @@
     color: var(--ink);
     padding: 32px 24px 64px;
   }
-  h1, h2, h3, h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; }
+  h1, h2, h3, h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; color: var(--primary); }
+
+  .cabecalho-marca { display: flex; align-items: center; gap: 16px; }
+  .logo-wrap {
+    width: 56px; height: 56px; border-radius: 8px; border: 1px solid var(--paper-line);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    background: var(--surface); flex-shrink: 0; overflow: hidden;
+  }
+  .logo-wrap:hover { border-color: var(--primary); }
+  .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-placeholder { font-size: 11px; color: var(--ink-soft); text-align: center; }
+  .logo-login { display: block; max-width: 110px; max-height: 110px; margin: 0 auto 14px; object-fit: contain; }
 
   .cabecalho-app {
     max-width: 1080px; margin: 0 auto 28px;
@@ -50,14 +62,14 @@
   }
   @media (max-width: 760px) { .grade-painel { grid-template-columns: 1fr; } }
 
-  .cartao { background: #fff; border: 1px solid var(--paper-line); border-radius: 4px; padding: 20px 22px; }
+  .cartao { background: var(--surface); border: 1px solid var(--paper-line); border-radius: 4px; padding: 20px 22px; }
   .cartao h2 { font-size: 17px; margin-bottom: 16px; }
 
   .contagem-linha { margin-bottom: 14px; }
   .contagem-linha:last-child { margin-bottom: 0; }
   .contagem-topo { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
   .contagem-numero { font-weight: 600; }
-  .contagem-trilho { height: 8px; background: #EEEAE0; border-radius: 99px; overflow: hidden; }
+  .contagem-trilho { height: 8px; background: #2A2418; border-radius: 99px; overflow: hidden; }
   .contagem-preenchido { height: 100%; border-radius: 99px; }
 
   .resumo-total { display: flex; align-items: baseline; gap: 8px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed var(--paper-line); }
@@ -70,28 +82,28 @@
   .barra-filtros { max-width: 1080px; margin: 0 auto 18px; display: flex; gap: 10px; flex-wrap: wrap; }
   .barra-filtros input, .barra-filtros select {
     font: inherit; font-size: 13.5px; padding: 9px 12px;
-    border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: var(--ink);
+    border: 1px solid var(--paper-line); border-radius: 4px; background: var(--surface); color: var(--ink);
   }
   .barra-filtros input { flex: 1; min-width: 200px; }
 
   .lista-alunos { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 
-  .prancheta { position: relative; background: #fff; border: 1px solid var(--paper-line); border-radius: 6px; padding: 22px 24px 18px; }
+  .prancheta { position: relative; background: var(--surface); border: 1px solid var(--paper-line); border-radius: 6px; padding: 22px 24px 18px; }
   .prancheta-clipe { position: absolute; top: -9px; left: 28px; width: 46px; height: 16px; background: var(--primary); border-radius: 3px; }
   .prancheta-cabecalho { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
-  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #14120C; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
   .prancheta-titulo { flex: 1; min-width: 180px; }
   .prancheta-titulo h3 { font-size: 16.5px; }
   .prancheta-sub { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-soft); }
 
   .botao-lembrete, .botao-primario {
-    font: inherit; font-size: 13px; font-weight: 600; background: var(--primary); color: #fff;
+    font: inherit; font-size: 13px; font-weight: 600; background: var(--primary); color: #14120C;
     border: none; border-radius: 4px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
   }
   .botao-lembrete:hover, .botao-primario:hover { background: var(--primary-dark); }
   .botao-excluir {
     font: inherit; font-size: 12.5px; background: none; color: var(--rust);
-    border: 1px solid #E7C6BB; border-radius: 4px; padding: 9px 12px; cursor: pointer;
+    border: 1px solid rgba(226,102,90,0.4); border-radius: 4px; padding: 9px 12px; cursor: pointer;
   }
   .botao-excluir:hover { background: var(--rust-bg); }
   .selo-inadimplente {
@@ -100,7 +112,7 @@
   }
   .botao-inadimplente {
     font: inherit; font-size: 12.5px; font-weight: 600; background: none; color: var(--rust);
-    border: 1px solid #E7C6BB; border-radius: 4px; padding: 9px 12px; cursor: pointer;
+    border: 1px solid rgba(226,102,90,0.4); border-radius: 4px; padding: 9px 12px; cursor: pointer;
   }
   .botao-inadimplente:hover { background: var(--rust-bg); }
   .botao-regularizar {
@@ -114,8 +126,8 @@
 
   .prancheta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .selo { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid transparent; }
-  .selo-neutro { background: #F0EEE7; color: var(--ink-soft); }
-  .selo-atencao { background: var(--rust-bg); color: var(--rust); border-color: #E7C6BB; }
+  .selo-neutro { background: #241F16; color: var(--ink-soft); }
+  .selo-atencao { background: var(--rust-bg); color: var(--rust); border-color: rgba(226,102,90,0.4); }
 
   .prancheta-suplemento { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; }
 
@@ -139,7 +151,7 @@
     display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
   }
   .sobreposicao.aberta { display: flex; }
-  .painel-modal { background: #fff; border-radius: 6px; max-width: 420px; width: 100%; padding: 22px 24px; }
+  .painel-modal { background: var(--surface); border-radius: 6px; max-width: 420px; width: 100%; padding: 22px 24px; }
   .painel-topo { display: flex; justify-content: space-between; align-items: flex-start; }
   .painel-topo h4 { font-size: 17px; }
   .fechar { background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-soft); }
@@ -150,7 +162,7 @@
 
   .campo-form { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .campo-form label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
-  .campo-form input { font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; }
+  .campo-form input { font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px; background: var(--surface); }
   .campo-form input:disabled { background: var(--paper); color: var(--ink-soft); }
   .campo-form-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .erro-form { font-size: 12.5px; color: var(--rust); margin: -4px 0 10px; }
@@ -161,7 +173,7 @@
     display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
   }
   .tela-login.oculto { display: none; }
-  .cartao-login { background: #fff; border: 1px solid var(--paper-line); border-radius: 6px; padding: 32px 28px; max-width: 340px; width: 100%; }
+  .cartao-login { background: var(--surface); border: 1px solid var(--paper-line); border-radius: 6px; padding: 32px 28px; max-width: 340px; width: 100%; }
   .cartao-login h1 { font-size: 22px; margin-bottom: 4px; }
   .cartao-login p.legenda-login { font-size: 13px; color: var(--ink-soft); margin: 0 0 20px; }
   .cartao-login .dica-login { font-size: 12px; color: var(--ink-soft); margin-top: 14px; border-top: 1px dashed var(--paper-line); padding-top: 12px; }
@@ -190,10 +202,10 @@
   .tabela-exercicios td.col-acao { width: 90px; text-align: right; }
 
   /* --------- chat --------- */
-  .painel-chat { background: #fff; border-radius: 6px; max-width: 440px; width: 100%; padding: 20px 22px; display: flex; flex-direction: column; max-height: 80vh; }
+  .painel-chat { background: var(--surface); border-radius: 6px; max-width: 440px; width: 100%; padding: 20px 22px; display: flex; flex-direction: column; max-height: 80vh; }
   .chat-mensagens { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; padding-right: 4px; min-height: 120px; max-height: 320px; }
   .chat-bolha { max-width: 80%; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.4; }
-  .chat-bolha-professor { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 2px; }
+  .chat-bolha-professor { align-self: flex-end; background: var(--primary); color: #14120C; border-bottom-right-radius: 2px; }
   .chat-bolha-sistema { align-self: center; background: var(--paper); color: var(--ink-soft); font-size: 12px; border: 1px dashed var(--paper-line); }
   .chat-hora { display: block; font-size: 10.5px; opacity: 0.75; margin-top: 3px; }
   .chat-vazio { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 20px 0; }
@@ -209,17 +221,17 @@
     font: inherit; font-size: 13.5px; font-weight: 600; background: none; color: var(--ink-soft);
     border: 1px solid var(--paper-line); border-radius: 99px; padding: 9px 18px; cursor: pointer;
   }
-  .botao-nav.ativo { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .botao-nav.ativo { background: var(--primary); color: #14120C; border-color: var(--primary); }
   .tela.oculto { display: none; }
 
   /* --------- cardápio --------- */
-  .aviso-cardapio { max-width: 1080px; margin: 0 auto 18px; font-size: 13px; color: var(--ink-soft); background: var(--amber-bg); border-color: #EBD9AE; }
+  .aviso-cardapio { max-width: 1080px; margin: 0 auto 18px; font-size: 13px; color: var(--ink-soft); background: var(--amber-bg); border-color: rgba(232,185,77,0.35); }
   .nav-cardapio { max-width: 1080px; margin: 0 auto 18px; display: flex; gap: 8px; flex-wrap: wrap; }
   .botao-nav-cardapio {
-    font: inherit; font-size: 12.5px; font-weight: 600; background: #fff; color: var(--ink-soft);
+    font: inherit; font-size: 12.5px; font-weight: 600; background: var(--surface); color: var(--ink-soft);
     border: 1px solid var(--paper-line); border-radius: 6px; padding: 8px 14px; cursor: pointer;
   }
-  .botao-nav-cardapio.ativo { background: var(--sage-bg); color: var(--sage); border-color: #C9DCC4; }
+  .botao-nav-cardapio.ativo { background: var(--sage-bg); color: var(--sage); border-color: rgba(111,191,115,0.35); }
   .cartao-cardapio { max-width: 1080px; margin: 0 auto; }
   .cardapio-principios { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
   .cardapio-refeicoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -241,13 +253,14 @@
     font: inherit; font-size: 14px; text-align: left; background: var(--paper); border: 1px solid var(--paper-line);
     border-radius: 4px; padding: 10px 12px; cursor: pointer; color: var(--ink);
   }
-  .checkin-item:hover { background: var(--sage-bg); border-color: #C9DCC4; }
+  .checkin-item:hover { background: var(--sage-bg); border-color: rgba(111,191,115,0.35); }
   .presenca-linha { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--paper-line); }
   .presenca-linha:last-child { border-bottom: none; }
 
   /* --------- financeiro --------- */
-  .grade-financeiro { grid-template-columns: repeat(3, 1fr); }
-  @media (max-width: 760px) { .grade-financeiro { grid-template-columns: 1fr; } }
+  .grade-financeiro { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 1000px) { .grade-financeiro { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grade-financeiro { grid-template-columns: 1fr; } }
   .botao-importar-ofx { display: inline-flex; align-items: center; cursor: pointer; }
   .cartao-financeiro { max-width: 1080px; margin: 0 auto 18px; }
   .linha-lancamento {
@@ -282,7 +295,7 @@
   }
   .linha-recorrente:last-child { border-bottom: none; }
   .linha-recorrente.inativo { opacity: 0.5; }
-  .selo-inativo { font-size: 11px; background: #F0EEE7; color: var(--ink-soft); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+  .selo-inativo { font-size: 11px; background: #241F16; color: var(--ink-soft); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
 </style>
 </head>
 <body>
@@ -290,6 +303,7 @@
   <!-- Tela de login -->
   <div class="tela-login" id="telaLogin">
     <div class="cartao-login">
+      <img id="logoLogin" class="oculto logo-login" alt="Logo da academia" />
       <h1>Academia Pró</h1>
       <p class="legenda-login">Acesso restrito à equipe de professores</p>
       <div class="campo-form">
@@ -321,16 +335,22 @@
   <div id="appConteudo" class="oculto">
 
   <div class="cabecalho-app">
-    <div>
-      <h1>Academia Pró — Painel do Professor</h1>
-      <p>Acompanhamento de treinos, fichas de alunos e lembretes</p>
+    <div class="cabecalho-marca">
+      <label class="logo-wrap" for="inputLogo" title="Clique para trocar a logo">
+        <img id="logoInstitucional" class="oculto" alt="Logo da academia" />
+        <span id="logoPlaceholder" class="logo-placeholder">+ Logo</span>
+      </label>
+      <input type="file" id="inputLogo" accept="image/*" style="display:none" />
+      <div>
+        <h1>Academia Pró — Painel do Professor</h1>
+        <p>Acompanhamento de treinos, fichas de alunos e lembretes</p>
+      </div>
     </div>
     <div class="cabecalho-direita">
       <span class="cabecalho-usuario" id="usuarioLogado"></span>
       <span class="data-hoje" id="dataHoje"></span>
       <div style="display:flex; gap:8px;">
         <button class="botao-primario" id="btnAtualizarSistema">Atualizar sistema</button>
-        <button class="botao-restaurar" id="btnRestaurar">Restaurar dados de exemplo</button>
         <button class="botao-sair" id="btnSair">Sair</button>
       </div>
     </div>
@@ -468,6 +488,21 @@
         <h2>A pagar (pendente)</h2>
         <div class="resumo-total"><span class="num" id="finAPagar" style="color:var(--rust)">R$ 0,00</span></div>
       </div>
+      <div class="cartao">
+        <h2>Faturamento do mês</h2>
+        <div class="resumo-total"><span class="num" id="finFaturamentoMes" style="color:var(--primary)">R$ 0,00</span></div>
+      </div>
+      <div class="cartao">
+        <h2>Inadimplência</h2>
+        <div class="resumo-total"><span class="num" id="finInadimplencia" style="color:var(--rust)">0%</span></div>
+        <p class="painel-legenda" id="finInadimplenciaLegenda" style="margin:-6px 0 0"></p>
+      </div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Faturamento — últimos 6 meses</h2>
+      <p class="painel-legenda" style="margin-top:-6px" id="finProjecaoTexto"></p>
+      <canvas id="graficoFaturamento" height="90"></canvas>
     </div>
 
     <div class="barra-filtros">
@@ -693,10 +728,11 @@
 
   </div><!-- fim #appConteudo -->
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
-  initializeFirestore, collection, doc, getDocs, getDocsFromServer, addDoc, onSnapshot,
+  initializeFirestore, collection, doc, getDoc, setDoc, getDocs, getDocsFromServer, addDoc, onSnapshot,
   query, where, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import {
@@ -801,6 +837,7 @@ async function gravarPresencaViaRest(alunoId, data, hora) {
 const colLancamentos = collection(db, "lancamentos");
 const colRecorrentes = collection(db, "recorrentes");
 const colPresencas = collection(db, "presencas");
+const docConfig = doc(db, "config", "geral");
 
 /* Sincroniza uma lista completa (padrão já usado no resto do app: toda
    ação monta a lista nova inteira e "persiste") com uma coleção do
@@ -898,9 +935,9 @@ function opcoesPlanoDeContas(selecionado) {
   `).join("");
 }
 const STATUS_INFO = {
-  "realizado": { cor: "#4C7A52", bg: "#E7EFE3" },
-  "a realizar": { cor: "#A9700E", bg: "#F6E9CF" },
-  "pendente": { cor: "#A24230", bg: "#F4E1DA" },
+  "realizado": { cor: "#6FBF73", bg: "rgba(111,191,115,0.16)" },
+  "a realizar": { cor: "#E8B94D", bg: "rgba(232,185,77,0.16)" },
+  "pendente": { cor: "#E2665A", bg: "rgba(226,102,90,0.16)" },
 };
 
 /* Cardápios de referência — resumo educativo baseado em diretrizes públicas
@@ -1040,6 +1077,56 @@ onAuthStateChanged(auth, (usuario) => {
   if (emFluxoCheckinGeral) return; // não interfere na tela pública de check-in
   if (usuario) mostrarApp(usuario);
   else mostrarTelaLogin();
+});
+
+// Logo institucional: carrega em tempo real na tela de login e no
+// cabeçalho do painel, sempre que alguém trocar (não depende de login).
+onSnapshot(docConfig, (snap) => {
+  const logoUrl = snap.exists() ? snap.data().logo : null;
+  [document.getElementById("logoLogin"), document.getElementById("logoInstitucional")].forEach(img => {
+    if (!img) return;
+    if (logoUrl) { img.src = logoUrl; img.classList.remove("oculto"); }
+    else { img.classList.add("oculto"); }
+  });
+  const placeholder = document.getElementById("logoPlaceholder");
+  if (placeholder) placeholder.classList.toggle("oculto", !!logoUrl);
+}, () => {}); // se der erro (ex.: sem permissão), simplesmente não mostra logo
+
+function comprimirImagemParaLogo(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const tamanho = 300;
+        const canvas = document.createElement("canvas");
+        canvas.width = tamanho;
+        canvas.height = tamanho;
+        const ctx = canvas.getContext("2d");
+        const escala = Math.min(tamanho / img.width, tamanho / img.height);
+        const w = img.width * escala, h = img.height * escala;
+        ctx.drawImage(img, (tamanho - w) / 2, (tamanho - h) / 2, w, h);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = reject;
+      img.src = leitor.result;
+    };
+    leitor.onerror = reject;
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+document.getElementById("inputLogo").addEventListener("change", async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  try {
+    const dataUrl = await comprimirImagemParaLogo(arquivo);
+    await setDoc(docConfig, { logo: dataUrl }, { merge: true });
+    mostrarStatus("Logo atualizada.", "ok");
+  } catch (err) {
+    mostrarStatus("Não foi possível salvar a logo: " + (err.code || err.message), "erro");
+  }
+  e.target.value = "";
 });
 
 function iniciarListenersFirestore() {
@@ -1221,6 +1308,20 @@ function renderizarFinanceiro() {
   document.getElementById("finAReceber").textContent = formatarMoeda(aReceber);
   document.getElementById("finAPagar").textContent = formatarMoeda(aPagar);
 
+  const mesAtual = hojeChave().slice(0, 7); // YYYY-MM
+  const faturamentoMes = lancamentos
+    .filter(l => l.tipo === "receita" && l.status === "pago" && (l.data || "").startsWith(mesAtual))
+    .reduce((s, l) => s + l.valor, 0);
+  document.getElementById("finFaturamentoMes").textContent = formatarMoeda(faturamentoMes);
+
+  const totalAlunos = alunos.length;
+  const alunosInadimplentes = alunos.filter(a => a.inadimplente).length;
+  const percentualInadimplencia = totalAlunos ? Math.round((alunosInadimplentes / totalAlunos) * 100) : 0;
+  document.getElementById("finInadimplencia").textContent = percentualInadimplencia + "%";
+  document.getElementById("finInadimplenciaLegenda").textContent = `${alunosInadimplentes} de ${totalAlunos} aluno(s)`;
+
+  renderizarGraficoFaturamento();
+
   function linhaHtml(l) {
     const aluno = l.alunoId ? alunos.find(a => a.id === l.alunoId) : null;
     return `
@@ -1253,6 +1354,69 @@ function renderizarFinanceiro() {
     btn.addEventListener("click", () => abrirEdicaoLancamento(Number(btn.dataset.editarLancamento))));
   document.getElementById("telaFinanceiro").querySelectorAll("[data-excluir-lancamento]").forEach(btn =>
     btn.addEventListener("click", () => excluirLancamento(Number(btn.dataset.excluirLancamento))));
+}
+
+let graficoFaturamentoInstancia = null;
+
+function ultimosNMeses(n) {
+  const meses = [];
+  const agora = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    meses.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return meses;
+}
+
+function nomeMesCurto(anoMes) {
+  const [ano, mes] = anoMes.split("-");
+  const nomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return nomes[Number(mes) - 1] + "/" + ano.slice(2);
+}
+
+function renderizarGraficoFaturamento() {
+  const canvas = document.getElementById("graficoFaturamento");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const meses = ultimosNMeses(6);
+  const receitasPorMes = meses.map(m =>
+    lancamentos.filter(l => l.tipo === "receita" && l.status === "pago" && (l.data || "").startsWith(m)).reduce((s, l) => s + l.valor, 0)
+  );
+  const despesasPorMes = meses.map(m =>
+    lancamentos.filter(l => l.tipo === "despesa" && l.status === "pago" && (l.data || "").startsWith(m)).reduce((s, l) => s + l.valor, 0)
+  );
+
+  // projeção simples: média das receitas dos últimos 3 meses com dado > 0
+  const ultimosComDado = receitasPorMes.filter(v => v > 0).slice(-3);
+  const projecao = ultimosComDado.length ? ultimosComDado.reduce((s, v) => s + v, 0) / ultimosComDado.length : 0;
+  document.getElementById("finProjecaoTexto").textContent = projecao
+    ? `Projeção para o próximo mês (média dos últimos meses): ${formatarMoeda(projecao)}`
+    : "Ainda não há dados suficientes para projetar o próximo mês.";
+
+  const dourado = "#D4AF37";
+  const vermelho = "#E2665A";
+
+  if (graficoFaturamentoInstancia) graficoFaturamentoInstancia.destroy();
+  graficoFaturamentoInstancia = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: meses.map(nomeMesCurto),
+      datasets: [
+        { label: "Receitas", data: receitasPorMes, backgroundColor: dourado, borderRadius: 4 },
+        { label: "Despesas", data: despesasPorMes, backgroundColor: vermelho, borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: "#B8AD95" } },
+      },
+      scales: {
+        x: { ticks: { color: "#B8AD95" }, grid: { color: "#2A2418" } },
+        y: { ticks: { color: "#B8AD95" }, grid: { color: "#2A2418" } },
+      },
+    },
+  });
 }
 
 /* ---------------- utilidades ---------------- */
@@ -2162,11 +2326,6 @@ document.getElementById("btnAtualizarSistema").addEventListener("click", async (
     mostrarStatus("Erro ao recalcular inadimplência: " + (e.code || e.message), "erro");
   }
   location.reload();
-});
-
-document.getElementById("btnRestaurar").addEventListener("click", () => {
-  if (!confirm("Restaurar os dados de exemplo? Isso substitui todos os alunos cadastrados atualmente.")) return;
-  persistir(ALUNOS_INICIAIS);
 });
 
 /* ---------------- inicialização ---------------- */
