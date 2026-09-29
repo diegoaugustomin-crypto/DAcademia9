@@ -252,6 +252,12 @@
   .linha-centro-custo .barra-centro { flex: 1; height: 8px; background: #2A2418; border-radius: 99px; overflow: hidden; }
   .linha-centro-custo .barra-centro-preenchido { height: 100%; background: var(--rust); border-radius: 99px; }
   .linha-centro-custo .valor-centro { flex: 0 0 110px; text-align: right; font-weight: 600; }
+
+  .rodape-sistema {
+    max-width: 1080px; margin: 32px auto 0; padding-top: 16px; border-top: 1px solid var(--paper-line);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  .rodape-texto { font-size: 12px; color: var(--ink-soft); }
   .cartao-cardapio { max-width: 1080px; margin: 0 auto; }
   .cardapio-principios { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
   .cardapio-refeicoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -774,6 +780,54 @@
     </div>
   </div>
 
+  <!-- Modal: cadastro de usuário do sistema -->
+  <div class="sobreposicao" id="modalUsuario">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4>Cadastrar usuário do sistema</h4>
+        <button class="fechar" data-fechar-modal="modalUsuario">×</button>
+      </div>
+      <p class="painel-legenda">Administradores têm acesso completo e permanente. Compradores/teste têm acesso completo até a data de expiração que você definir.</p>
+
+      <div class="campo-form">
+        <label>Nome</label>
+        <input id="usrNome" placeholder="Nome da pessoa ou da academia cliente" />
+      </div>
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>E-mail de acesso</label>
+          <input id="usrEmail" type="email" placeholder="email@exemplo.com" />
+        </div>
+        <div class="campo-form">
+          <label>Senha</label>
+          <input id="usrSenha" type="password" placeholder="Mínimo 6 caracteres" />
+        </div>
+      </div>
+      <div class="campo-form">
+        <label>Tipo de acesso</label>
+        <select id="usrTipo">
+          <option value="admin">Administrador (acesso completo e permanente)</option>
+          <option value="comprador">Comprador — acesso de teste (completo, com prazo)</option>
+        </select>
+      </div>
+      <div class="campo-form oculto" id="usrPrazoWrap">
+        <label>Período de teste (dias a partir de hoje)</label>
+        <input id="usrDiasTeste" type="number" min="1" value="7" />
+      </div>
+
+      <p class="erro-form oculto" id="erroUsuario"></p>
+
+      <div class="painel-rodape">
+        <button class="botao-primario" id="btnSalvarUsuario">Cadastrar usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="rodape-sistema oculto" id="rodapeSistema">
+    <button class="botao-restaurar" id="btnAbrirCadastroUsuario">+ Cadastrar usuário do sistema</button>
+    <span class="rodape-texto">Academia Pró</span>
+  </footer>
+
   </div><!-- fim #appConteudo -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -784,7 +838,7 @@ import {
   query, where, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 /* ==================================================================
@@ -813,7 +867,14 @@ const appFirebase = initializeApp(firebaseConfig);
 const db = initializeFirestore(appFirebase, { experimentalAutoDetectLongPolling: true });
 const auth = getAuth(appFirebase);
 
+// App secundário só para CRIAR novas contas: criar um usuário com o SDK
+// automaticamente troca a sessão ativa para o usuário novo. Usando uma
+// segunda instância do Firebase, o administrador continua logado.
+const appFirebaseSecundario = initializeApp(firebaseConfig, "Secundario");
+const authSecundario = getAuth(appFirebaseSecundario);
+
 const colAlunos = collection(db, "alunos");
+const colUsuarios = collection(db, "usuarios");
 
 /* ------------------------------------------------------------------
    Check-in público (QR, sem login) via API REST do Firestore, em vez
@@ -1104,12 +1165,48 @@ function encerrarSessao() {
   signOut(auth);
 }
 
-function mostrarApp(usuarioLogado) {
+let papelUsuarioAtual = null;
+
+async function mostrarApp(usuarioLogado) {
+  const acessoLiberado = await verificarPerfilUsuario(usuarioLogado);
+  if (!acessoLiberado) return; // verificarPerfilUsuario já deslogou e avisou
+
   document.getElementById("telaLogin").classList.add("oculto");
   document.getElementById("appConteudo").classList.remove("oculto");
   document.getElementById("usuarioLogado").textContent = "Logado como " + (usuarioLogado.displayName || usuarioLogado.email);
   document.getElementById("dataHoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+  document.getElementById("rodapeSistema").classList.toggle("oculto", papelUsuarioAtual !== "admin");
   iniciarListenersFirestore();
+}
+
+// Confere o perfil do usuário em "usuarios/{uid}". Contas antigas, criadas
+// direto no Firebase Console antes desse recurso existir, não têm esse
+// documento — nesse caso, são tratadas como administrador (não perdem
+// acesso). Contas do tipo "comprador" com prazo vencido são bloqueadas.
+async function verificarPerfilUsuario(usuarioLogado) {
+  try {
+    const snap = await getDoc(doc(colUsuarios, usuarioLogado.uid));
+    if (!snap.exists()) {
+      papelUsuarioAtual = "admin";
+      return true;
+    }
+    const perfil = snap.data();
+    if (perfil.tipo === "comprador" && perfil.dataExpiracao && perfil.dataExpiracao < hojeChave()) {
+      await signOut(auth);
+      mostrarTelaLogin();
+      const erroEl = document.getElementById("erroLogin");
+      erroEl.textContent = `Seu período de teste expirou em ${formatarDataBR(perfil.dataExpiracao)}. Fale com o administrador.`;
+      erroEl.classList.remove("oculto");
+      return false;
+    }
+    papelUsuarioAtual = perfil.tipo || "admin";
+    return true;
+  } catch (e) {
+    // sem acesso ao documento de perfil (ex.: regra ainda não publicada) —
+    // não trava o acesso por causa disso, só não libera o rodapé de admin.
+    papelUsuarioAtual = null;
+    return true;
+  }
 }
 
 function mostrarTelaLogin() {
@@ -2431,6 +2528,72 @@ document.getElementById("btnSalvarRecorrente").addEventListener("click", () => {
 });
 
 document.getElementById("btnGerarRecorrentes").addEventListener("click", gerarLancamentosRecorrentesDoMes);
+
+/* ---------------- cadastro de usuários do sistema ---------------- */
+
+document.getElementById("btnAbrirCadastroUsuario").addEventListener("click", () => {
+  document.getElementById("usrNome").value = "";
+  document.getElementById("usrEmail").value = "";
+  document.getElementById("usrSenha").value = "";
+  document.getElementById("usrTipo").value = "admin";
+  document.getElementById("usrDiasTeste").value = "7";
+  document.getElementById("usrPrazoWrap").classList.add("oculto");
+  document.getElementById("erroUsuario").classList.add("oculto");
+  abrirModal("modalUsuario");
+});
+
+document.getElementById("usrTipo").addEventListener("change", (e) => {
+  document.getElementById("usrPrazoWrap").classList.toggle("oculto", e.target.value !== "comprador");
+});
+
+document.getElementById("btnSalvarUsuario").addEventListener("click", async () => {
+  const nome = document.getElementById("usrNome").value.trim();
+  const email = document.getElementById("usrEmail").value.trim();
+  const senha = document.getElementById("usrSenha").value;
+  const tipo = document.getElementById("usrTipo").value;
+  const erroEl = document.getElementById("erroUsuario");
+  const btn = document.getElementById("btnSalvarUsuario");
+
+  if (!nome || !email || senha.length < 6) {
+    erroEl.textContent = "Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.";
+    erroEl.classList.remove("oculto");
+    return;
+  }
+
+  let dataExpiracao = null;
+  if (tipo === "comprador") {
+    const dias = parseInt(document.getElementById("usrDiasTeste").value, 10) || 7;
+    const data = new Date();
+    data.setDate(data.getDate() + dias);
+    dataExpiracao = formatarISO(data);
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Cadastrando...";
+  erroEl.classList.add("oculto");
+
+  try {
+    const credencial = await createUserWithEmailAndPassword(authSecundario, email, senha);
+    await setDoc(doc(colUsuarios, credencial.user.uid), {
+      nome, email, tipo, dataExpiracao,
+      criadoEm: hojeChave(),
+      criadoPor: auth.currentUser ? auth.currentUser.email : "desconhecido",
+    });
+    await signOut(authSecundario); // encerra a sessão da conta nova no app secundário
+    mostrarStatus(
+      tipo === "admin"
+        ? `Administrador ${nome} cadastrado com sucesso.`
+        : `Acesso de teste para ${nome} cadastrado até ${formatarDataBR(dataExpiracao)}.`,
+      "ok"
+    );
+    fecharModal("modalUsuario");
+  } catch (e) {
+    erroEl.textContent = "Não foi possível cadastrar: " + (e.code === "auth/email-already-in-use" ? "esse e-mail já está em uso." : (e.code || e.message));
+    erroEl.classList.remove("oculto");
+  }
+  btn.disabled = false;
+  btn.textContent = "Cadastrar usuário";
+});
 
 /* ---------------- eventos gerais ---------------- */
 
