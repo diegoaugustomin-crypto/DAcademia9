@@ -232,6 +232,26 @@
     border: 1px solid var(--paper-line); border-radius: 6px; padding: 8px 14px; cursor: pointer;
   }
   .botao-nav-cardapio.ativo { background: var(--sage-bg); color: var(--sage); border-color: rgba(111,191,115,0.35); }
+
+  /* --------- relatórios --------- */
+  .nav-relatorio { display: flex; gap: 8px; flex-wrap: wrap; }
+  .botao-nav-relatorio {
+    font: inherit; font-size: 12.5px; font-weight: 600; background: var(--paper); color: var(--ink-soft);
+    border: 1px solid var(--paper-line); border-radius: 6px; padding: 8px 14px; cursor: pointer;
+  }
+  .botao-nav-relatorio.ativo { background: var(--primary); color: #14120C; border-color: var(--primary); }
+  .grade-relatorio-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 640px) { .grade-relatorio-resumo { grid-template-columns: 1fr; } }
+  .mini-kpi { background: var(--paper); border: 1px solid var(--paper-line); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .mini-kpi-label { font-size: 11.5px; color: var(--ink-soft); }
+  .mini-kpi-valor { font-family: Georgia, serif; font-size: 19px; }
+  .subtitulo-relatorio { font-size: 14px; color: var(--primary); margin-bottom: 8px; }
+  .linha-centro-custo { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--paper-line); }
+  .linha-centro-custo:last-child { border-bottom: none; }
+  .linha-centro-custo .nome-centro { flex: 0 0 220px; }
+  .linha-centro-custo .barra-centro { flex: 1; height: 8px; background: #2A2418; border-radius: 99px; overflow: hidden; }
+  .linha-centro-custo .barra-centro-preenchido { height: 100%; background: var(--rust); border-radius: 99px; }
+  .linha-centro-custo .valor-centro { flex: 0 0 110px; text-align: right; font-weight: 600; }
   .cartao-cardapio { max-width: 1080px; margin: 0 auto; }
   .cardapio-principios { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
   .cardapio-refeicoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -505,6 +525,28 @@
       <h2>Faturamento — últimos 6 meses</h2>
       <p class="painel-legenda" style="margin-top:-6px" id="finProjecaoTexto"></p>
       <canvas id="graficoFaturamento" height="90"></canvas>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Relatórios</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Escolha o período para ver o resumo e os gastos por centro de custo.</p>
+      <nav class="nav-relatorio">
+        <button class="botao-nav-relatorio ativo" data-periodo="diario">Diário</button>
+        <button class="botao-nav-relatorio" data-periodo="semanal">Semanal</button>
+        <button class="botao-nav-relatorio" data-periodo="mensal">Mensal</button>
+        <button class="botao-nav-relatorio" data-periodo="semestral">Semestral</button>
+        <button class="botao-nav-relatorio" data-periodo="anual">Anual</button>
+      </nav>
+      <p class="painel-legenda" id="relatorioIntervaloTexto" style="margin:10px 0 14px;"></p>
+
+      <div class="grade-relatorio-resumo">
+        <div class="mini-kpi"><span class="mini-kpi-label">Receitas do período</span><span class="mini-kpi-valor valor-receita" id="relReceitasPeriodo">R$ 0,00</span></div>
+        <div class="mini-kpi"><span class="mini-kpi-label">Despesas do período</span><span class="mini-kpi-valor valor-despesa" id="relDespesasPeriodo">R$ 0,00</span></div>
+        <div class="mini-kpi"><span class="mini-kpi-label">Saldo do período</span><span class="mini-kpi-valor" id="relSaldoPeriodo" style="color:var(--primary)">R$ 0,00</span></div>
+      </div>
+
+      <h4 class="subtitulo-relatorio">Gastos por centro de custo</h4>
+      <div id="relatorioCentroCusto"></div>
     </div>
 
     <div class="barra-filtros">
@@ -1327,6 +1369,7 @@ function renderizarFinanceiro() {
   document.getElementById("finInadimplenciaLegenda").textContent = `${alunosInadimplentes} de ${totalAlunos} aluno(s)`;
 
   renderizarGraficoFaturamento();
+  if (document.getElementById("relatorioCentroCusto")) renderizarRelatorio();
 
   function linhaHtml(l) {
     const aluno = l.alunoId ? alunos.find(a => a.id === l.alunoId) : null;
@@ -1424,6 +1467,65 @@ function renderizarGraficoFaturamento() {
     },
   });
 }
+
+/* ---------------- relatórios por período ---------------- */
+
+let periodoRelatorioAtual = "diario";
+
+function formatarISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function calcularIntervaloPeriodo(tipo) {
+  const hoje = new Date();
+  let inicio;
+  if (tipo === "semanal") { inicio = new Date(hoje); inicio.setDate(inicio.getDate() - 6); }
+  else if (tipo === "mensal") inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  else if (tipo === "semestral") { inicio = new Date(hoje); inicio.setMonth(inicio.getMonth() - 6); }
+  else if (tipo === "anual") inicio = new Date(hoje.getFullYear(), 0, 1);
+  else inicio = new Date(hoje); // diário
+  return { inicio: formatarISO(inicio), fim: formatarISO(hoje) };
+}
+
+function renderizarRelatorio() {
+  const { inicio, fim } = calcularIntervaloPeriodo(periodoRelatorioAtual);
+  const nomesPeriodo = { diario: "Hoje", semanal: "Últimos 7 dias", mensal: "Este mês", semestral: "Últimos 6 meses", anual: "Este ano" };
+  document.getElementById("relatorioIntervaloTexto").textContent =
+    `${nomesPeriodo[periodoRelatorioAtual]} — de ${formatarDataBR(inicio)} até ${formatarDataBR(fim)}`;
+
+  const doPeriodo = lancamentos.filter(l => l.status === "pago" && l.data && l.data >= inicio && l.data <= fim);
+  const receitas = doPeriodo.filter(l => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
+  const despesas = doPeriodo.filter(l => l.tipo === "despesa").reduce((s, l) => s + l.valor, 0);
+
+  document.getElementById("relReceitasPeriodo").textContent = formatarMoeda(receitas);
+  document.getElementById("relDespesasPeriodo").textContent = formatarMoeda(despesas);
+  document.getElementById("relSaldoPeriodo").textContent = formatarMoeda(receitas - despesas);
+
+  const despesasPorCentro = {};
+  doPeriodo.filter(l => l.tipo === "despesa").forEach(l => {
+    const centro = l.centroCusto || "Sem centro de custo";
+    despesasPorCentro[centro] = (despesasPorCentro[centro] || 0) + l.valor;
+  });
+  const entradas = Object.entries(despesasPorCentro).sort((a, b) => b[1] - a[1]);
+  const maiorValor = entradas.length ? entradas[0][1] : 0;
+
+  document.getElementById("relatorioCentroCusto").innerHTML = entradas.length
+    ? entradas.map(([centro, valor]) => `
+        <div class="linha-centro-custo">
+          <span class="nome-centro">${centro}</span>
+          <span class="barra-centro"><span class="barra-centro-preenchido" style="width:${maiorValor ? (valor / maiorValor * 100) : 0}%"></span></span>
+          <span class="valor-centro">${formatarMoeda(valor)}</span>
+        </div>
+      `).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhuma despesa paga nesse período.</p>`;
+}
+
+document.querySelectorAll("[data-periodo]").forEach(btn =>
+  btn.addEventListener("click", () => {
+    periodoRelatorioAtual = btn.dataset.periodo;
+    document.querySelectorAll("[data-periodo]").forEach(b => b.classList.toggle("ativo", b === btn));
+    renderizarRelatorio();
+  }));
 
 /* ---------------- utilidades ---------------- */
 
