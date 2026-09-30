@@ -34,6 +34,8 @@
     background: var(--surface); flex-shrink: 0; overflow: hidden;
   }
   .logo-wrap:hover { border-color: var(--primary); }
+  .logo-wrap-bloqueado { cursor: not-allowed; opacity: 0.6; }
+  .logo-wrap-bloqueado:hover { border-color: var(--paper-line); }
   .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
   .logo-placeholder { font-size: 11px; color: var(--ink-soft); text-align: center; }
   .logo-login { display: block; max-width: 110px; max-height: 110px; margin: 0 auto 14px; object-fit: contain; }
@@ -164,6 +166,15 @@
   .campo-form label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .campo-form input { font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px; background: var(--surface); }
   .campo-form input:disabled { background: var(--paper); color: var(--ink-soft); }
+
+  #loginUsuario, #loginSenha { color: var(--primary); caret-color: var(--primary); }
+  #loginUsuario:-webkit-autofill, #loginSenha:-webkit-autofill,
+  #loginUsuario:-webkit-autofill:hover, #loginSenha:-webkit-autofill:hover,
+  #loginUsuario:-webkit-autofill:focus, #loginSenha:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--primary) !important;
+    box-shadow: 0 0 0px 1000px var(--surface) inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+  }
   .campo-form-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .erro-form { font-size: 12.5px; color: var(--rust); margin: -4px 0 10px; }
 
@@ -364,7 +375,7 @@
 
   <div class="cabecalho-app">
     <div class="cabecalho-marca">
-      <label class="logo-wrap" for="inputLogo" title="Clique para trocar a logo">
+      <label class="logo-wrap" id="logoWrap" for="inputLogo" title="Clique para trocar a logo">
         <img id="logoInstitucional" class="oculto" alt="Logo da academia" />
         <span id="logoPlaceholder" class="logo-placeholder">+ Logo</span>
       </label>
@@ -1166,6 +1177,7 @@ function encerrarSessao() {
 }
 
 let papelUsuarioAtual = null;
+let nomePerfilAtual = null;
 
 async function mostrarApp(usuarioLogado) {
   const acessoLiberado = await verificarPerfilUsuario(usuarioLogado);
@@ -1176,7 +1188,15 @@ async function mostrarApp(usuarioLogado) {
   document.getElementById("usuarioLogado").textContent = "Logado como " + (usuarioLogado.displayName || usuarioLogado.email);
   document.getElementById("dataHoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
   document.getElementById("rodapeSistema").classList.toggle("oculto", papelUsuarioAtual !== "admin");
+
+  const podeTrocarLogo = papelUsuarioAtual === "admin" || papelUsuarioAtual === null;
+  document.getElementById("inputLogo").disabled = !podeTrocarLogo;
+  document.getElementById("logoWrap").classList.toggle("logo-wrap-bloqueado", !podeTrocarLogo);
+  document.getElementById("logoWrap").title = podeTrocarLogo ? "Clique para trocar a logo" : "Somente o administrador pode alterar a logo";
   iniciarListenersFirestore();
+
+  const primeiroNome = (nomePerfilAtual || usuarioLogado.displayName || usuarioLogado.email.split("@")[0]).split(" ")[0];
+  mostrarStatus(`Bem-vindo(a), ${primeiroNome}!`, "ok");
 }
 
 // Confere o perfil do usuário em "usuarios/{uid}". Contas antigas, criadas
@@ -1188,6 +1208,7 @@ async function verificarPerfilUsuario(usuarioLogado) {
     const snap = await getDoc(doc(colUsuarios, usuarioLogado.uid));
     if (!snap.exists()) {
       papelUsuarioAtual = "admin";
+      nomePerfilAtual = null;
       return true;
     }
     const perfil = snap.data();
@@ -1200,11 +1221,13 @@ async function verificarPerfilUsuario(usuarioLogado) {
       return false;
     }
     papelUsuarioAtual = perfil.tipo || "admin";
+    nomePerfilAtual = perfil.nome || null;
     return true;
   } catch (e) {
     // sem acesso ao documento de perfil (ex.: regra ainda não publicada) —
     // não trava o acesso por causa disso, só não libera o rodapé de admin.
     papelUsuarioAtual = null;
+    nomePerfilAtual = null;
     return true;
   }
 }
