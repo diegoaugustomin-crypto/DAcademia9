@@ -379,7 +379,7 @@
         <img id="logoInstitucional" class="oculto" alt="Logo da academia" />
         <span id="logoPlaceholder" class="logo-placeholder">+ Logo</span>
       </label>
-      <input type="file" id="inputLogo" accept="image/*" style="display:none" />
+      <input type="file" id="inputLogo" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml,image/bmp,image/*" style="display:none" />
       <div>
         <h1>Academia Pró — Painel do Professor</h1>
         <p>Acompanhamento de treinos, fichas de alunos e lembretes</p>
@@ -403,6 +403,8 @@
     <button class="botao-nav" data-tela="telaCardapio">Sugestão alimentar</button>
     <button class="botao-nav" data-tela="telaCheckin">Check-in</button>
     <button class="botao-nav" data-tela="telaFinanceiro">Financeiro</button>
+    <button class="botao-nav" data-tela="telaCobrancas">Cobranças e Aniversários</button>
+    <button class="botao-nav" data-tela="telaImportacao">Importar dados</button>
   </nav>
 
   <!-- ===================== TELA: PAINEL (só pendências) ===================== -->
@@ -601,6 +603,91 @@
 
   </div>
 
+  <!-- ===================== TELA: COBRANÇAS E ANIVERSÁRIOS ===================== -->
+  <div class="tela oculto" id="telaCobrancas">
+
+    <div class="cartao aviso-cardapio">
+      <strong>Painel de revisão diária.</strong> Sempre que você abrir o sistema, esta tela mostra quem está perto do vencimento da mensalidade e quem faz aniversário nos próximos dias — basta clicar em "Notificar" para enviar pelo chat interno e pelo WhatsApp. Não é um envio automático em segundo plano: alguém precisa abrir o sistema e clicar para o aviso ser enviado.
+    </div>
+
+    <div class="cartao cartao-pendencias">
+      <h2>Mensalidades próximas do vencimento</h2>
+      <div class="barra-filtros" style="margin:6px 0 4px;">
+        <div class="campo-form" style="max-width:220px;">
+          <label>Avisar com quantos dias de antecedência</label>
+          <input id="inputDiasCobranca" type="number" min="0" max="30" />
+        </div>
+        <button class="botao-restaurar" id="btnSalvarDiasCobranca">Salvar prazo</button>
+      </div>
+      <div class="resumo-total">
+        <span class="num" id="totalCobrancasProximas">0</span>
+        <span class="rotulo">mensalidade(s) a vencer ou já vencida(s)</span>
+      </div>
+      <div id="listaCobrancas"></div>
+    </div>
+
+    <div class="cartao cartao-pendencias">
+      <h2>Aniversariantes</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Mostra quem faz aniversário hoje ou nos próximos 3 dias. Cadastre a data de nascimento na ficha do aluno para aparecer aqui.</p>
+      <div class="resumo-total">
+        <span class="num" id="totalAniversariantes">0</span>
+        <span class="rotulo">aniversariante(s) em breve</span>
+      </div>
+      <div id="listaAniversarios"></div>
+    </div>
+  </div>
+
+  <!-- ===================== TELA: IMPORTAÇÃO DE DADOS ===================== -->
+  <div class="tela oculto" id="telaImportacao">
+
+    <div class="cartao aviso-cardapio">
+      <strong>Importação de planilhas e PDF.</strong> Envie uma planilha (.xlsx, .xls ou .csv) ou um PDF com uma tabela de alunos ou de lançamentos financeiros. O sistema tenta identificar automaticamente nome, telefone, data de nascimento, matrícula, valores, datas de vencimento e se é conta a pagar ou a receber. Confira e ajuste o que for preciso antes de confirmar — nada é cadastrado sem sua confirmação.
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>1. Escolha o arquivo</h2>
+      <div class="barra-filtros" style="margin:6px 0 4px;flex-wrap:wrap;">
+        <div class="campo-form" style="max-width:260px;">
+          <label>O que você está importando?</label>
+          <select id="importTipoAlvo">
+            <option value="auto">Detectar automaticamente</option>
+            <option value="alunos">Cadastro de alunos</option>
+            <option value="financeiro">Financeiro (contas a pagar/receber)</option>
+          </select>
+        </div>
+        <div class="campo-form" style="max-width:280px;" id="campoImportTipoPadrao">
+          <label>Se a planilha não indicar, tratar lançamentos como</label>
+          <select id="importTipoPadraoFinanceiro">
+            <option value="receita">Contas a receber (receita)</option>
+            <option value="despesa">Contas a pagar (despesa)</option>
+          </select>
+        </div>
+        <label class="botao-restaurar botao-importar-ofx" style="margin-top:20px;">
+          Escolher arquivo (.xlsx, .csv ou .pdf)
+          <input type="file" id="inputImportacao" accept=".xlsx,.xls,.csv,.pdf" style="display:none;" />
+        </label>
+      </div>
+      <p class="painel-legenda" id="statusLeituraImportacao" style="margin-top:4px;"></p>
+    </div>
+
+    <div class="cartao cartao-financeiro oculto" id="cartaoMapeamentoImportacao">
+      <h2>2. Confira o mapeamento das colunas</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Para cada coluna da planilha, confirme para qual campo do sistema ela deve ir. Colunas marcadas como "Ignorar" não são importadas.</p>
+      <div id="mapeamentoColunasImportacao"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro oculto" id="cartaoPreviaImportacao">
+      <h2>3. Prévia dos dados identificados</h2>
+      <p class="painel-legenda" style="margin-top:-6px" id="legendaPreviaImportacao"></p>
+      <div id="previaImportacao" class="previa-ofx" style="max-height:420px;"></div>
+      <div class="painel-rodape" style="margin-top:14px;">
+        <button class="botao-primario" id="btnConfirmarImportacao">Confirmar importação</button>
+        <button class="botao-restaurar" id="btnCancelarImportacao">Cancelar</button>
+      </div>
+      <p class="painel-legenda" id="statusConfirmacaoImportacao"></p>
+    </div>
+  </div>
+
   <!-- Modal: lembrete -->
   <div class="sobreposicao" id="modalLembrete">
     <div class="painel-modal">
@@ -645,9 +732,15 @@
         <label>Professor(a) responsável</label>
         <input id="formProfessor" placeholder="Nome do professor" />
       </div>
-      <div class="campo-form">
-        <label>WhatsApp do aluno (com DDI e DDD, só números)</label>
-        <input id="formTelefone" placeholder="Ex: 5562988887777" />
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>WhatsApp do aluno (com DDI e DDD, só números)</label>
+          <input id="formTelefone" placeholder="Ex: 5562988887777" />
+        </div>
+        <div class="campo-form">
+          <label>Data de nascimento</label>
+          <input id="formDataNascimento" type="date" />
+        </div>
       </div>
       <div class="campo-form">
         <label>Comorbidades (separadas por vírgula)</label>
@@ -842,6 +935,8 @@
   </div><!-- fim #appConteudo -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
@@ -851,6 +946,13 @@ import {
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+// pdf.js precisa de um worker separado para extrair texto de PDFs —
+// usamos a mesma versão do script carregado no <head>.
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
 
 /* ==================================================================
    ACADEMIA PRÓ — agora com Firebase (Firestore + Authentication).
@@ -1992,6 +2094,128 @@ function confirmarEnvioLembrete(alunoId, mensagem) {
   setTimeout(() => fecharModal("modalLembrete"), 1400);
 }
 
+/* ---------------- cobranças próximas e aniversários ---------------- */
+
+function diasEntreDatas(dataInicioISO, dataFimISO) {
+  const d1 = new Date(dataInicioISO + "T00:00:00");
+  const d2 = new Date(dataFimISO + "T00:00:00");
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function mensagemCobranca(aluno, lancamento, dias) {
+  const venc = formatarDataBR(lancamento.data);
+  const situacao = dias < 0
+    ? `venceu em ${venc} e está em aberto`
+    : dias === 0
+      ? `vence hoje, ${venc}`
+      : `vence em ${venc}`;
+  return `Olá, ${aluno.nome.split(" ")[0]}! Passando para lembrar que sua mensalidade de ${formatarMoeda(lancamento.valor)} ${situacao}. Qualquer dúvida sobre o pagamento, fale com a recepção.`;
+}
+
+function mensagemAniversario(aluno) {
+  return `Olá, ${aluno.nome.split(" ")[0]}! 🎉 A equipe da academia deseja um feliz aniversário! Que seu novo ano seja repleto de saúde e boas conquistas. Conte com a gente nos seus treinos!`;
+}
+
+// Mesma mecânica do "Notificar treino" (abrirLembrete / confirmarEnvioLembrete),
+// mas com título e mensagem definidos por quem chama — reaproveitado aqui
+// para cobrança de mensalidade e para aviso de aniversário.
+function abrirNotificacaoGenerica(alunoId, titulo, mensagem) {
+  alunoLembreteAtual = alunoId;
+  document.getElementById("tituloLembrete").textContent = titulo;
+  document.getElementById("mensagemLembrete").textContent = mensagem;
+  document.getElementById("rodapeLembrete").innerHTML =
+    `<button class="botao-primario" id="btnConfirmarLembrete">Notificar por chat + WhatsApp</button>`;
+  document.getElementById("btnConfirmarLembrete").addEventListener("click", () => confirmarEnvioLembrete(alunoId, mensagem));
+  abrirModal("modalLembrete");
+}
+
+function diasAntecedenciaCobranca() {
+  const salvo = Number(localStorage.getItem("diasAntecedenciaCobranca"));
+  return Number.isFinite(salvo) && salvo >= 0 ? salvo : 5;
+}
+
+function renderizarCobrancas() {
+  const hoje = hojeChave();
+  const limiteDias = diasAntecedenciaCobranca();
+  const inputDias = document.getElementById("inputDiasCobranca");
+  if (inputDias && document.activeElement !== inputDias) inputDias.value = limiteDias;
+
+  /* --- mensalidades próximas do vencimento (ou já vencidas) --- */
+  const pendentesProximas = lancamentos
+    .filter(l => l.tipo === "receita" && l.status === "pendente" && l.alunoId && l.data)
+    .map(l => ({ lancamento: l, dias: diasEntreDatas(hoje, l.data) }))
+    .filter(({ dias }) => dias <= limiteDias)
+    .sort((a, b) => a.dias - b.dias);
+
+  document.getElementById("totalCobrancasProximas").textContent = pendentesProximas.length;
+  document.getElementById("listaCobrancas").innerHTML = pendentesProximas.length
+    ? pendentesProximas.map(({ lancamento: l, dias }) => {
+        const aluno = alunos.find(a => a.id === l.alunoId);
+        if (!aluno) return "";
+        const situacao = dias < 0 ? `vencida há ${Math.abs(dias)} dia(s)` : dias === 0 ? "vence hoje" : `vence em ${dias} dia(s)`;
+        return `
+          <div class="linha-turma">
+            <span><strong>${aluno.nome}</strong> — ${formatarMoeda(l.valor)} · ${situacao} (${formatarDataBR(l.data)})</span>
+            <button class="botao-notificar" data-notificar-cobranca="${aluno.id}|${l.id}">Notificar</button>
+          </div>
+        `;
+      }).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhuma mensalidade próxima do vencimento.</p>`;
+
+  document.getElementById("listaCobrancas").querySelectorAll("[data-notificar-cobranca]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const [alunoIdStr, lancIdStr] = btn.dataset.notificarCobranca.split("|");
+      const alunoId = Number(alunoIdStr);
+      const lancamento = lancamentos.find(l => l.id === Number(lancIdStr));
+      const aluno = alunos.find(a => a.id === alunoId);
+      if (!aluno || !lancamento) return;
+      const dias = diasEntreDatas(hoje, lancamento.data);
+      abrirNotificacaoGenerica(alunoId, "Cobrança de mensalidade — " + aluno.nome.split(" ")[0], mensagemCobranca(aluno, lancamento, dias));
+    }));
+
+  /* --- aniversariantes de hoje e dos próximos 3 dias --- */
+  const JANELA_ANIVERSARIO = 3;
+  const anoAtual = Number(hoje.slice(0, 4));
+  const aniversariantes = alunos
+    .filter(a => a.dataNascimento)
+    .map(a => {
+      const mesDia = a.dataNascimento.slice(5); // MM-DD
+      let proxima = `${anoAtual}-${mesDia}`;
+      let dias = diasEntreDatas(hoje, proxima);
+      if (dias < 0) { proxima = `${anoAtual + 1}-${mesDia}`; dias = diasEntreDatas(hoje, proxima); }
+      return { aluno: a, dias };
+    })
+    .filter(({ dias }) => dias >= 0 && dias <= JANELA_ANIVERSARIO)
+    .sort((a, b) => a.dias - b.dias);
+
+  document.getElementById("totalAniversariantes").textContent = aniversariantes.length;
+  document.getElementById("listaAniversarios").innerHTML = aniversariantes.length
+    ? aniversariantes.map(({ aluno, dias }) => `
+        <div class="linha-turma">
+          <span><strong>${aluno.nome}</strong> — ${dias === 0 ? "aniversário é hoje! 🎉" : `aniversário em ${dias} dia(s)`}</span>
+          <button class="botao-notificar" data-notificar-aniversario="${aluno.id}">Notificar</button>
+        </div>
+      `).join("")
+    : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum aniversário nos próximos dias. Cadastre a data de nascimento dos alunos para ativar esse aviso.</p>`;
+
+  document.getElementById("listaAniversarios").querySelectorAll("[data-notificar-aniversario]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      const aluno = alunos.find(a => a.id === Number(btn.dataset.notificarAniversario));
+      if (!aluno) return;
+      abrirNotificacaoGenerica(aluno.id, "Feliz aniversário — " + aluno.nome.split(" ")[0], mensagemAniversario(aluno));
+    }));
+
+  if (inputDias && !inputDias.dataset.listenerPronto) {
+    inputDias.dataset.listenerPronto = "1";
+    document.getElementById("btnSalvarDiasCobranca").addEventListener("click", () => {
+      const valor = Math.max(0, Math.min(30, Number(inputDias.value) || 0));
+      localStorage.setItem("diasAntecedenciaCobranca", String(valor));
+      renderizarCobrancas();
+      mostrarStatus("Prazo de aviso de cobrança atualizado.", "ok");
+    });
+  }
+}
+
 function enviarMensagemChat(alunoId, texto) {
   const agora = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   persistir(alunos.map(a => a.id === alunoId
@@ -2010,6 +2234,7 @@ function renderizarTudo() {
   if (document.getElementById("qrGeralImagem")) renderizarCheckin();
   if (document.getElementById("finSaldo")) renderizarFinanceiro();
   if (document.getElementById("listaRecorrentes")) renderizarRecorrentes();
+  if (document.getElementById("listaCobrancas")) renderizarCobrancas();
 }
 
 function renderizarPendencias() {
@@ -2230,7 +2455,7 @@ document.getElementById("formIdade").addEventListener("input", (e) => {
 });
 
 function limparFormularioCadastro() {
-  ["formNome", "formMatricula", "formIdade", "formProfessor", "formTelefone", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
+  ["formNome", "formMatricula", "formIdade", "formProfessor", "formTelefone", "formDataNascimento", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("formFaixaCalculada").value = "—";
   document.getElementById("erroCadastro").classList.add("oculto");
 }
@@ -2257,6 +2482,7 @@ function abrirEdicaoAluno(alunoId) {
   document.getElementById("formFaixaCalculada").value = aluno.faixaEtaria;
   document.getElementById("formProfessor").value = aluno.professor;
   document.getElementById("formTelefone").value = aluno.telefone || "";
+  document.getElementById("formDataNascimento").value = aluno.dataNascimento || "";
   document.getElementById("formComorbidades").value = (aluno.comorbidades || []).join(", ");
   document.getElementById("formSuplementacao").value = aluno.suplementacao;
   abrirModal("modalCadastro");
@@ -2291,6 +2517,7 @@ document.getElementById("btnSalvarCadastro").addEventListener("click", () => {
     faixaEtaria: calcularFaixaEtaria(idade),
     professor: document.getElementById("formProfessor").value.trim() || "A definir",
     telefone: document.getElementById("formTelefone").value.replace(/\D/g, ""),
+    dataNascimento: document.getElementById("formDataNascimento").value || null,
     comorbidades,
     suplementacao: document.getElementById("formSuplementacao").value.trim() || "Nenhuma prescrita",
   };
@@ -2485,6 +2712,444 @@ document.getElementById("btnConfirmarOfx").addEventListener("click", () => {
   transacoesOfxParaImportar = [];
   fecharModal("modalOfx");
   mostrarStatus(`${novos.length} lançamento(s) importado(s) do OFX.`, "ok");
+});
+
+/* ---------------- importação genérica: planilha (.xlsx/.csv) ou PDF ----------------
+   Fluxo: 1) lê o arquivo e extrai uma tabela (cabeçalhos + linhas);
+          2) tenta adivinhar se é cadastro de alunos ou financeiro,
+             e sugere para qual campo do sistema cada coluna vai;
+          3) mostra uma prévia dos registros já interpretados;
+          4) só grava no Firestore quando o usuário confirma. */
+
+function normalizarTexto(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
+const CAMPOS_ALUNO_IMPORTACAO = [
+  { chave: "nome", rotulo: "Nome do aluno", sinonimos: ["nome", "aluno", "nome do aluno", "nome completo", "cliente"] },
+  { chave: "matricula", rotulo: "Matrícula", sinonimos: ["matricula", "codigo", "registro", "id"] },
+  { chave: "idade", rotulo: "Idade", sinonimos: ["idade", "anos"] },
+  { chave: "telefone", rotulo: "WhatsApp / telefone", sinonimos: ["telefone", "celular", "whatsapp", "fone", "contato", "numero", "numero de contato"] },
+  { chave: "dataNascimento", rotulo: "Data de nascimento", sinonimos: ["nascimento", "data de nascimento", "aniversario", "dt nascimento", "nasc", "data nasc"] },
+  { chave: "professor", rotulo: "Professor", sinonimos: ["professor", "instrutor", "personal"] },
+  { chave: "comorbidades", rotulo: "Comorbidades", sinonimos: ["comorbidade", "comorbidades", "condicao", "condicao de saude", "saude", "observacoes"] },
+  { chave: "suplementacao", rotulo: "Suplementação", sinonimos: ["suplementacao", "suplemento"] },
+  { chave: "ignorar", rotulo: "Ignorar esta coluna", sinonimos: [] },
+];
+
+const CAMPOS_FINANCEIRO_IMPORTACAO = [
+  { chave: "descricao", rotulo: "Descrição", sinonimos: ["descricao", "historico", "lancamento", "item", "conta", "discriminacao"] },
+  { chave: "valor", rotulo: "Valor", sinonimos: ["valor", "montante", "preco", "total", "valor total"] },
+  { chave: "data", rotulo: "Data (vencimento)", sinonimos: ["data", "vencimento", "data de vencimento", "dt vencimento", "data vcto", "venc"] },
+  { chave: "tipo", rotulo: "Tipo (a pagar / a receber)", sinonimos: ["tipo", "natureza", "a pagar ou a receber"] },
+  { chave: "status", rotulo: "Status (pago/pendente)", sinonimos: ["status", "situacao"] },
+  { chave: "centroCusto", rotulo: "Centro de custo", sinonimos: ["centro de custo", "categoria", "classificacao"] },
+  { chave: "aluno", rotulo: "Nome do aluno (para vincular)", sinonimos: ["aluno", "cliente", "nome do aluno", "pagador", "nome"] },
+  { chave: "ignorar", rotulo: "Ignorar esta coluna", sinonimos: [] },
+];
+
+function sugerirCampoImportacao(cabecalho, campos) {
+  const h = normalizarTexto(cabecalho);
+  if (!h) return "ignorar";
+  for (const campo of campos) {
+    if (campo.sinonimos.some(s => normalizarTexto(s) === h)) return campo.chave;
+  }
+  for (const campo of campos) {
+    if (campo.sinonimos.some(s => h.includes(normalizarTexto(s)))) return campo.chave;
+  }
+  return "ignorar";
+}
+
+function detectarTipoImportacao(cabecalhos) {
+  const normalizados = cabecalhos.map(normalizarTexto);
+  const temValor = normalizados.some(h => /valor|preco|montante/.test(h));
+  const temDadosDeAluno = normalizados.some(h => /matricula|idade|nascimento|whatsapp|telefone|celular/.test(h));
+  if (temDadosDeAluno && !temValor) return "alunos";
+  if (temValor) return "financeiro";
+  return "alunos";
+}
+
+/* --- leitura dos três formatos aceitos --- */
+
+function parseCSVTexto(texto) {
+  const linhasTexto = texto.split(/\r\n|\n|\r/).filter(l => l.trim().length);
+  if (!linhasTexto.length) return { cabecalhos: [], linhas: [] };
+  const delimitador = linhasTexto[0].split(";").length > linhasTexto[0].split(",").length ? ";" : ",";
+  const parseLinha = (linha) => {
+    const campos = [];
+    let atual = "", dentroAspas = false;
+    for (let i = 0; i < linha.length; i++) {
+      const c = linha[i];
+      if (c === '"') { dentroAspas = !dentroAspas; continue; }
+      if (c === delimitador && !dentroAspas) { campos.push(atual.trim()); atual = ""; continue; }
+      atual += c;
+    }
+    campos.push(atual.trim());
+    return campos;
+  };
+  const cabecalhos = parseLinha(linhasTexto[0]);
+  const linhas = linhasTexto.slice(1).map(parseLinha);
+  return { cabecalhos, linhas };
+}
+
+function lerComoCSV(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => { try { resolve(parseCSVTexto(leitor.result)); } catch (e) { reject(e); } };
+    leitor.onerror = reject;
+    leitor.readAsText(arquivo, "UTF-8");
+  });
+}
+
+function lerComoXLSX(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      try {
+        const dados = new Uint8Array(leitor.result);
+        const planilha = XLSX.read(dados, { type: "array", cellDates: true });
+        const primeiraAba = planilha.Sheets[planilha.SheetNames[0]];
+        const linhasBrutas = XLSX.utils.sheet_to_json(primeiraAba, { header: 1, raw: false, dateNF: "yyyy-mm-dd", defval: "" });
+        const linhasComConteudo = linhasBrutas.filter(l => l.some(c => String(c).trim() !== ""));
+        if (!linhasComConteudo.length) return resolve({ cabecalhos: [], linhas: [] });
+        const cabecalhos = linhasComConteudo[0].map(c => String(c).trim());
+        const linhas = linhasComConteudo.slice(1).map(l => cabecalhos.map((_, i) => String(l[i] ?? "").trim()));
+        resolve({ cabecalhos, linhas });
+      } catch (e) { reject(e); }
+    };
+    leitor.onerror = reject;
+    leitor.readAsArrayBuffer(arquivo);
+  });
+}
+
+// Extração "melhor esforço": agrupa o texto do PDF por linha (posição Y) e
+// depois separa colunas onde houver 2+ espaços seguidos. Funciona bem para
+// PDFs com tabelas simples e alinhadas; PDFs com layout complexo podem não
+// ser lidos corretamente — nesse caso, a planilha (.xlsx/.csv) é mais confiável.
+async function lerComoPDF(arquivo) {
+  const dados = await arquivo.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: dados }).promise;
+  const linhasTexto = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const pagina = await pdf.getPage(p);
+    const conteudo = await pagina.getTextContent();
+    const porLinha = new Map();
+    conteudo.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      if (!porLinha.has(y)) porLinha.set(y, []);
+      porLinha.get(y).push(item);
+    });
+    [...porLinha.keys()].sort((a, b) => b - a).forEach(y => {
+      const itensLinha = porLinha.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
+      linhasTexto.push(itensLinha.map(i => i.str).join(" ").replace(/\s+/g, (m) => m.length >= 2 ? m : " "));
+    });
+  }
+  const linhasDivididas = linhasTexto.map(l => l.trim()).filter(Boolean)
+    .map(l => l.split(/\s{2,}|\t/).map(c => c.trim()).filter(Boolean));
+  const linhasTabela = linhasDivididas.filter(l => l.length > 1);
+  if (!linhasTabela.length) return { cabecalhos: [], linhas: [] };
+  const numColunas = linhasTabela[0].length;
+  const cabecalhos = linhasTabela[0];
+  const linhas = linhasTabela.slice(1).map(l => {
+    const copia = l.slice(0, numColunas);
+    while (copia.length < numColunas) copia.push("");
+    return copia;
+  });
+  return { cabecalhos, linhas };
+}
+
+/* --- normalização dos valores lidos --- */
+
+function normalizarTelefoneImportado(valor) {
+  const digitos = String(valor || "").replace(/\D/g, "");
+  if (!digitos) return "";
+  return digitos.length <= 11 ? "55" + digitos : digitos;
+}
+
+function normalizarDataImportada(valor) {
+  const v = String(valor || "").trim();
+  if (!v) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  const m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m) {
+    let [, d, mo, a] = m;
+    if (a.length === 2) a = "20" + a;
+    return `${a}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return "";
+}
+
+function normalizarValorMonetario(valor) {
+  let v = String(valor || "").trim();
+  if (!v) return 0;
+  v = v.replace(/[^\d,.\-]/g, "");
+  if (v.includes(",") && v.includes(".")) v = v.replace(/\./g, "").replace(",", ".");
+  else if (v.includes(",")) v = v.replace(",", ".");
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? Math.abs(n) : 0;
+}
+
+function normalizarTipoLancamentoImportado(valor) {
+  const v = normalizarTexto(valor);
+  if (!v) return "";
+  if (v.includes("receb") || v.includes("receita") || v.includes("credito")) return "receita";
+  if (v.includes("pagar") || v.includes("despesa") || v.includes("debito")) return "despesa";
+  return "";
+}
+
+function normalizarStatusLancamentoImportado(valor) {
+  const v = normalizarTexto(valor);
+  if (!v) return "pendente";
+  if (v.includes("pago") || v.includes("quitado") || v.includes("recebido") || v.includes("liquidado")) return "pago";
+  return "pendente";
+}
+
+function gerarMatriculaUnicaLocal(listaAtual) {
+  const existentes = new Set(listaAtual.map(a => String(a.matricula || "")));
+  let tentativa;
+  do { tentativa = String(Math.floor(1000 + Math.random() * 9000)); } while (existentes.has(tentativa));
+  return tentativa;
+}
+
+/* --- estado e fluxo da tela de importação --- */
+
+let importacaoEstado = { tipo: null, cabecalhos: [], linhas: [], mapeamento: {} };
+
+function valorMapeadoImportacao(linha, chaveCampo) {
+  const coluna = Object.keys(importacaoEstado.mapeamento).find(c => importacaoEstado.mapeamento[c] === chaveCampo);
+  if (!coluna) return "";
+  const indice = importacaoEstado.cabecalhos.indexOf(coluna);
+  return indice >= 0 ? (linha[indice] ?? "") : "";
+}
+
+function montarRegistrosImportacao() {
+  if (importacaoEstado.tipo === "alunos") {
+    return importacaoEstado.linhas.map(linha => {
+      const nome = String(valorMapeadoImportacao(linha, "nome")).trim();
+      if (!nome) return null;
+      const dataNascimento = normalizarDataImportada(valorMapeadoImportacao(linha, "dataNascimento"));
+      let idade = Number(String(valorMapeadoImportacao(linha, "idade")).replace(/\D/g, "")) || 0;
+      if (!idade && dataNascimento) {
+        const hoje = new Date();
+        const nasc = new Date(dataNascimento + "T00:00:00");
+        idade = hoje.getFullYear() - nasc.getFullYear() - (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate()) ? 1 : 0);
+      }
+      return {
+        nome,
+        telefone: normalizarTelefoneImportado(valorMapeadoImportacao(linha, "telefone")),
+        dataNascimento: dataNascimento || null,
+        idade,
+        matriculaBruta: String(valorMapeadoImportacao(linha, "matricula")).trim(),
+        professor: String(valorMapeadoImportacao(linha, "professor")).trim() || "A definir",
+        comorbidades: String(valorMapeadoImportacao(linha, "comorbidades")).split(/[,;]/).map(c => c.trim()).filter(Boolean),
+        suplementacao: String(valorMapeadoImportacao(linha, "suplementacao")).trim() || "Nenhuma prescrita",
+      };
+    }).filter(Boolean);
+  }
+
+  const tipoPadrao = document.getElementById("importTipoPadraoFinanceiro").value;
+  return importacaoEstado.linhas.map(linha => {
+    const descricao = String(valorMapeadoImportacao(linha, "descricao")).trim();
+    const valor = normalizarValorMonetario(valorMapeadoImportacao(linha, "valor"));
+    if (!descricao || !valor) return null;
+    const data = normalizarDataImportada(valorMapeadoImportacao(linha, "data")) || hojeChave();
+    const tipo = normalizarTipoLancamentoImportado(valorMapeadoImportacao(linha, "tipo")) || tipoPadrao;
+    const nomeAluno = String(valorMapeadoImportacao(linha, "aluno")).trim();
+    const alunoEncontrado = encontrarAlunoPorNome(nomeAluno || descricao);
+    return {
+      descricao,
+      valor,
+      data,
+      tipo,
+      status: normalizarStatusLancamentoImportado(valorMapeadoImportacao(linha, "status")),
+      centroCusto: sugerirCentroCusto(descricao, tipo),
+      alunoId: alunoEncontrado ? alunoEncontrado.id : null,
+    };
+  }).filter(Boolean);
+}
+
+function renderizarMapeamentoImportacao() {
+  const campos = importacaoEstado.tipo === "alunos" ? CAMPOS_ALUNO_IMPORTACAO : CAMPOS_FINANCEIRO_IMPORTACAO;
+  document.getElementById("cartaoMapeamentoImportacao").classList.remove("oculto");
+  document.getElementById("mapeamentoColunasImportacao").innerHTML = `
+    <div class="barra-filtros" style="flex-wrap:wrap;gap:10px;">
+      ${importacaoEstado.cabecalhos.map(c => `
+        <div class="campo-form" style="min-width:200px;">
+          <label>${c || "(coluna sem nome)"}</label>
+          <select data-mapear-coluna="${c}">
+            ${campos.map(cp => `<option value="${cp.chave}" ${importacaoEstado.mapeamento[c] === cp.chave ? "selected" : ""}>${cp.rotulo}</option>`).join("")}
+          </select>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  document.querySelectorAll("#mapeamentoColunasImportacao [data-mapear-coluna]").forEach(sel =>
+    sel.addEventListener("change", () => {
+      importacaoEstado.mapeamento[sel.dataset.mapearColuna] = sel.value;
+      renderizarPreviaImportacao();
+    }));
+  renderizarPreviaImportacao();
+}
+
+function renderizarPreviaImportacao() {
+  const registros = montarRegistrosImportacao();
+  const ignoradas = importacaoEstado.linhas.length - registros.length;
+  document.getElementById("cartaoPreviaImportacao").classList.toggle("oculto", importacaoEstado.linhas.length === 0);
+  if (!importacaoEstado.linhas.length) return;
+
+  if (!registros.length) {
+    document.getElementById("legendaPreviaImportacao").textContent =
+      "Nenhuma linha pôde ser interpretada com o mapeamento atual. Confira se as colunas certas foram selecionadas acima.";
+    document.getElementById("previaImportacao").innerHTML = "";
+    return;
+  }
+
+  if (importacaoEstado.tipo === "alunos") {
+    document.getElementById("legendaPreviaImportacao").textContent =
+      `${registros.length} aluno(s) serão cadastrados ou atualizados` +
+      (ignoradas ? ` (${ignoradas} linha(s) ignorada(s) por falta de nome).` : ".") +
+      ` Quem já tiver a mesma matrícula de um aluno existente terá o cadastro atualizado em vez de duplicado.`;
+    document.getElementById("previaImportacao").innerHTML = `
+      <table>
+        <thead><tr><th>Nome</th><th>Matrícula</th><th>Idade</th><th>WhatsApp</th><th>Nascimento</th><th>Professor</th></tr></thead>
+        <tbody>
+          ${registros.slice(0, 50).map(r => `
+            <tr>
+              <td>${r.nome}</td>
+              <td>${r.matriculaBruta || "(gerada automaticamente)"}</td>
+              <td>${r.idade || "—"}</td>
+              <td>${r.telefone || "—"}</td>
+              <td>${formatarDataBR(r.dataNascimento)}</td>
+              <td>${r.professor}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      ${registros.length > 50 ? `<p class="painel-legenda">Mostrando as primeiras 50 de ${registros.length} linhas. Todas serão importadas ao confirmar.</p>` : ""}
+    `;
+  } else {
+    document.getElementById("legendaPreviaImportacao").textContent =
+      `${registros.length} lançamento(s) serão cadastrados` +
+      (ignoradas ? ` (${ignoradas} linha(s) ignorada(s) por falta de descrição ou valor).` : ".");
+    document.getElementById("previaImportacao").innerHTML = `
+      <table>
+        <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Data</th><th>Status</th><th>Centro de custo</th><th>Aluno vinculado</th></tr></thead>
+        <tbody>
+          ${registros.slice(0, 50).map(r => `
+            <tr>
+              <td>${r.descricao}</td>
+              <td>${r.tipo === "receita" ? "Receita (a receber)" : "Despesa (a pagar)"}</td>
+              <td>${formatarMoeda(r.valor)}</td>
+              <td>${formatarDataBR(r.data)}</td>
+              <td>${r.status === "pago" ? "Pago" : "Pendente"}</td>
+              <td>${r.centroCusto}</td>
+              <td>${r.alunoId ? (alunos.find(a => a.id === r.alunoId) || {}).nome || "—" : "—"}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      ${registros.length > 50 ? `<p class="painel-legenda">Mostrando as primeiras 50 de ${registros.length} linhas. Todas serão importadas ao confirmar.</p>` : ""}
+    `;
+  }
+}
+
+function limparImportacao() {
+  importacaoEstado = { tipo: null, cabecalhos: [], linhas: [], mapeamento: {} };
+  document.getElementById("cartaoMapeamentoImportacao").classList.add("oculto");
+  document.getElementById("cartaoPreviaImportacao").classList.add("oculto");
+  document.getElementById("statusLeituraImportacao").textContent = "";
+  document.getElementById("statusConfirmacaoImportacao").textContent = "";
+}
+
+document.getElementById("inputImportacao").addEventListener("change", async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  const statusEl = document.getElementById("statusLeituraImportacao");
+  statusEl.textContent = "Lendo arquivo...";
+  try {
+    const extensao = arquivo.name.split(".").pop().toLowerCase();
+    let tabela;
+    if (extensao === "csv") tabela = await lerComoCSV(arquivo);
+    else if (extensao === "xlsx" || extensao === "xls") tabela = await lerComoXLSX(arquivo);
+    else if (extensao === "pdf") tabela = await lerComoPDF(arquivo);
+    else { statusEl.textContent = "Formato não suportado. Use .xlsx, .csv ou .pdf."; return; }
+
+    if (!tabela || !tabela.linhas.length) {
+      statusEl.textContent = "Não encontramos uma tabela de dados legível nesse arquivo. Planilhas (.xlsx/.csv) costumam funcionar melhor que PDF.";
+      return;
+    }
+
+    const tipoEscolhido = document.getElementById("importTipoAlvo").value;
+    const tipo = tipoEscolhido === "auto" ? detectarTipoImportacao(tabela.cabecalhos) : tipoEscolhido;
+    const campos = tipo === "alunos" ? CAMPOS_ALUNO_IMPORTACAO : CAMPOS_FINANCEIRO_IMPORTACAO;
+    const mapeamento = {};
+    tabela.cabecalhos.forEach(c => { mapeamento[c] = sugerirCampoImportacao(c, campos); });
+
+    importacaoEstado = { tipo, cabecalhos: tabela.cabecalhos, linhas: tabela.linhas, mapeamento };
+    statusEl.textContent = `Arquivo lido: ${tabela.linhas.length} linha(s) encontrada(s), identificado como ${tipo === "alunos" ? "cadastro de alunos" : "financeiro"}. Confira o mapeamento abaixo.`;
+    renderizarMapeamentoImportacao();
+  } catch (erro) {
+    statusEl.textContent = "Não foi possível ler esse arquivo. Verifique o formato e tente novamente.";
+  } finally {
+    e.target.value = "";
+  }
+});
+
+document.getElementById("importTipoAlvo").addEventListener("change", () => {
+  if (!importacaoEstado.cabecalhos.length) return;
+  const tipoEscolhido = document.getElementById("importTipoAlvo").value;
+  importacaoEstado.tipo = tipoEscolhido === "auto" ? detectarTipoImportacao(importacaoEstado.cabecalhos) : tipoEscolhido;
+  const campos = importacaoEstado.tipo === "alunos" ? CAMPOS_ALUNO_IMPORTACAO : CAMPOS_FINANCEIRO_IMPORTACAO;
+  importacaoEstado.cabecalhos.forEach(c => { importacaoEstado.mapeamento[c] = sugerirCampoImportacao(c, campos); });
+  renderizarMapeamentoImportacao();
+});
+
+document.getElementById("importTipoPadraoFinanceiro").addEventListener("change", () => {
+  if (importacaoEstado.tipo === "financeiro") renderizarPreviaImportacao();
+});
+
+document.getElementById("btnCancelarImportacao").addEventListener("click", limparImportacao);
+
+document.getElementById("btnConfirmarImportacao").addEventListener("click", () => {
+  const registros = montarRegistrosImportacao();
+  if (!registros.length) { limparImportacao(); return; }
+
+  if (importacaoEstado.tipo === "alunos") {
+    let proxId = alunos.length ? Math.max(...alunos.map(a => a.id)) + 1 : 1;
+    const listaAtualizada = [...alunos];
+    let novos = 0, atualizados = 0;
+    registros.forEach(r => {
+      const existenteIndex = r.matriculaBruta ? listaAtualizada.findIndex(a => String(a.matricula) === r.matriculaBruta) : -1;
+      const existente = existenteIndex >= 0 ? listaAtualizada[existenteIndex] : null;
+      const idadeFinal = r.idade || (existente ? existente.idade : 0);
+      const dados = {
+        nome: r.nome,
+        matricula: existente ? existente.matricula : (r.matriculaBruta || gerarMatriculaUnicaLocal(listaAtualizada)),
+        idade: idadeFinal,
+        faixaEtaria: calcularFaixaEtaria(idadeFinal || 1),
+        professor: r.professor,
+        telefone: r.telefone || (existente ? existente.telefone : ""),
+        dataNascimento: r.dataNascimento || (existente ? existente.dataNascimento : null),
+        comorbidades: r.comorbidades.length ? r.comorbidades : (existente ? existente.comorbidades : []),
+        suplementacao: r.suplementacao,
+      };
+      if (existente) { listaAtualizada[existenteIndex] = { ...existente, ...dados }; atualizados++; }
+      else { listaAtualizada.push({ id: proxId++, exercicios: [], ...dados }); novos++; }
+    });
+    persistir(listaAtualizada);
+    const resumo = `Importação concluída: ${novos} aluno(s) novo(s), ${atualizados} atualizado(s).`;
+    document.getElementById("statusConfirmacaoImportacao").textContent = resumo;
+    mostrarStatus(resumo, "ok");
+  } else {
+    let proxId = lancamentos.length ? Math.max(...lancamentos.map(l => l.id)) + 1 : 1;
+    const novosLancamentos = registros.map(r => ({ id: proxId++, ...r, origem: "importado" }));
+    persistirFinanceiro([...lancamentos, ...novosLancamentos]);
+    const resumo = `Importação concluída: ${novosLancamentos.length} lançamento(s) importado(s).`;
+    document.getElementById("statusConfirmacaoImportacao").textContent = resumo;
+    mostrarStatus(resumo, "ok");
+  }
+
+  setTimeout(limparImportacao, 2000);
 });
 
 /* ---------------- gastos recorrentes: modal ---------------- */
