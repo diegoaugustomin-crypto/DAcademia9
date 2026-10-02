@@ -164,8 +164,17 @@
 
   .campo-form { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .campo-form label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
-  .campo-form input { font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line); border-radius: 4px; background: var(--surface); }
+  .campo-form input, .campo-form select, .campo-form textarea {
+    font: inherit; font-size: 13.5px; padding: 9px 11px; border: 1px solid var(--paper-line);
+    border-radius: 4px; background: var(--surface); color: #FFFFFF; caret-color: #FFFFFF;
+  }
   .campo-form input:disabled { background: var(--paper); color: var(--ink-soft); }
+  .campo-form input::placeholder, .campo-form textarea::placeholder { color: var(--ink-soft); opacity: 1; }
+  .campo-form input:-webkit-autofill, .campo-form input:-webkit-autofill:hover, .campo-form input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #FFFFFF !important;
+    box-shadow: 0 0 0px 1000px var(--surface) inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+  }
 
   #loginUsuario, #loginSenha { color: var(--primary); caret-color: var(--primary); }
   #loginUsuario:-webkit-autofill, #loginSenha:-webkit-autofill,
@@ -375,10 +384,10 @@
 
   <div class="cabecalho-app">
     <div class="cabecalho-marca">
-      <label class="logo-wrap" id="logoWrap" for="inputLogo" title="Clique para trocar a logo">
+      <div class="logo-wrap" id="logoWrap">
         <img id="logoInstitucional" class="oculto" alt="Logo da academia" />
-        <span id="logoPlaceholder" class="logo-placeholder">+ Logo</span>
-      </label>
+        <span id="logoPlaceholder" class="logo-placeholder">Sem logo</span>
+      </div>
       <input type="file" id="inputLogo" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml,image/bmp,image/*" style="display:none" />
       <div>
         <h1>Academia Pró — Painel do Professor</h1>
@@ -405,6 +414,8 @@
     <button class="botao-nav" data-tela="telaFinanceiro">Financeiro</button>
     <button class="botao-nav" data-tela="telaCobrancas">Cobranças e Aniversários</button>
     <button class="botao-nav" data-tela="telaImportacao">Importar dados</button>
+    <button class="botao-nav oculto" data-tela="telaAdmin" id="navBotaoAdmin">Administração</button>
+    <button class="botao-nav oculto" data-tela="telaMinhaFicha" id="navBotaoMinhaFicha">Minha Ficha</button>
   </nav>
 
   <!-- ===================== TELA: PAINEL (só pendências) ===================== -->
@@ -688,6 +699,41 @@
     </div>
   </div>
 
+  <!-- ===================== TELA: ADMINISTRAÇÃO ===================== -->
+  <div class="tela oculto" id="telaAdmin">
+
+    <div class="cartao aviso-cardapio">
+      <strong>Painel administrativo.</strong> Tudo que só o proprietário pode fazer fica reunido aqui: cadastro e permissões de usuários do sistema, e troca da logo institucional. Esta aba só aparece para contas com papel "Proprietário".
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Usuários do sistema</h2>
+      <p class="painel-legenda" style="margin-top:-6px">O tipo de licença (administrador ou comprador/teste) define até quando a conta tem acesso. O papel define o que a pessoa vê dentro do sistema: proprietário tem acesso completo, professor vê alunos e check-in, e aluno só consulta a própria ficha.</p>
+      <button class="botao-restaurar" id="btnAbrirCadastroUsuario">+ Cadastrar usuário do sistema</button>
+      <div id="listaUsuariosAdmin" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="cartao cartao-financeiro">
+      <h2>Logo da academia</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Aparece na tela de login e no cabeçalho do sistema.</p>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="logo-wrap" id="logoWrapAdmin" style="pointer-events:none;">
+          <img id="logoAdminPreview" class="oculto" alt="Logo da academia" />
+          <span id="logoAdminPlaceholder" class="logo-placeholder">Sem logo</span>
+        </div>
+        <button class="botao-restaurar" id="btnAlterarLogoAdmin">Alterar logo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TELA: MINHA FICHA (papel "aluno") ===================== -->
+  <div class="tela oculto" id="telaMinhaFicha">
+    <div class="cartao cartao-pendencias">
+      <h2>Minha ficha</h2>
+      <div id="fichaAlunoConteudo"></div>
+    </div>
+  </div>
+
   <!-- Modal: lembrete -->
   <div class="sobreposicao" id="modalLembrete">
     <div class="painel-modal">
@@ -698,6 +744,25 @@
       <p class="painel-legenda">Pré-visualização da mensagem — será enviada ao mesmo tempo pelo chat interno e pelo WhatsApp cadastrado do aluno</p>
       <div class="mensagem-preview" id="mensagemLembrete"></div>
       <div class="painel-rodape" id="rodapeLembrete"></div>
+    </div>
+  </div>
+
+  <!-- Modal: cartão de aniversário -->
+  <div class="sobreposicao" id="modalCartaoAniversario">
+    <div class="painel-modal">
+      <div class="painel-topo">
+        <h4 id="tituloCartaoAniversario">Cartão de aniversário</h4>
+        <button class="fechar" data-fechar-modal="modalCartaoAniversario">×</button>
+      </div>
+      <p class="painel-legenda">Cartão gerado com a logo da academia e o nome do aluno. Baixe a imagem ou compartilhe direto no WhatsApp — o link de WhatsApp não envia imagem automaticamente, por isso o compartilhamento abre o aplicativo para você confirmar o envio.</p>
+      <div style="display:flex;justify-content:center;margin-bottom:14px;">
+        <canvas id="canvasCartaoAniversario" width="1080" height="1080" style="width:100%;max-width:300px;border-radius:10px;border:1px solid var(--paper-line);"></canvas>
+      </div>
+      <div class="painel-rodape" style="justify-content:flex-start;flex-wrap:wrap;gap:10px;">
+        <button class="botao-restaurar" id="btnBaixarCartaoAniversario">Baixar cartão (PNG)</button>
+        <button class="botao-restaurar oculto" id="btnCompartilharCartaoAniversario">Compartilhar no WhatsApp</button>
+        <button class="botao-primario" id="btnEnviarTextoAniversario">Enviar só mensagem de texto</button>
+      </div>
     </div>
   </div>
 
@@ -724,9 +789,15 @@
           <input id="formIdade" type="number" min="0" placeholder="Ex: 34" />
         </div>
       </div>
-      <div class="campo-form">
-        <label>Faixa etária</label>
-        <input id="formFaixaCalculada" disabled value="—" />
+      <div class="campo-form-linha">
+        <div class="campo-form">
+          <label>Data da matrícula</label>
+          <input id="formDataMatricula" type="date" />
+        </div>
+        <div class="campo-form">
+          <label>Faixa etária</label>
+          <input id="formFaixaCalculada" disabled value="—" />
+        </div>
       </div>
       <div class="campo-form">
         <label>Professor(a) responsável</label>
@@ -891,7 +962,7 @@
         <h4>Cadastrar usuário do sistema</h4>
         <button class="fechar" data-fechar-modal="modalUsuario">×</button>
       </div>
-      <p class="painel-legenda">Administradores têm acesso completo e permanente. Compradores/teste têm acesso completo até a data de expiração que você definir.</p>
+      <p class="painel-legenda">O tipo de licença define até quando a conta funciona (administrador é permanente; comprador/teste tem prazo). O papel define o que a pessoa vê dentro do sistema.</p>
 
       <div class="campo-form">
         <label>Nome</label>
@@ -919,6 +990,19 @@
         <input id="usrDiasTeste" type="number" min="1" value="7" />
       </div>
 
+      <div class="campo-form">
+        <label>Papel no sistema (o que a pessoa vê no painel)</label>
+        <select id="usrPapel">
+          <option value="proprietario">Proprietário — acesso completo ao painel</option>
+          <option value="professor">Professor — alunos, check-in, sugestão alimentar, cobranças/aniversários</option>
+          <option value="aluno">Aluno — consulta apenas a própria ficha</option>
+        </select>
+      </div>
+      <div class="campo-form oculto" id="usrMatriculaWrap">
+        <label>Matrícula do aluno a vincular</label>
+        <input id="usrMatriculaVinculada" placeholder="Ex: 1001" />
+      </div>
+
       <p class="erro-form oculto" id="erroUsuario"></p>
 
       <div class="painel-rodape">
@@ -926,11 +1010,6 @@
       </div>
     </div>
   </div>
-
-  <footer class="rodape-sistema oculto" id="rodapeSistema">
-    <button class="botao-restaurar" id="btnAbrirCadastroUsuario">+ Cadastrar usuário do sistema</button>
-    <span class="rodape-texto">Academia Pró</span>
-  </footer>
 
   </div><!-- fim #appConteudo -->
 
@@ -1248,6 +1327,7 @@ let alunos = [];
 let lancamentos = [];
 let recorrentes = [];
 let presencasHoje = [];
+let usuariosSistema = [];
 let alunoLembreteAtual = null;
 let alunoChatAtual = null;
 
@@ -1278,8 +1358,34 @@ function encerrarSessao() {
   signOut(auth);
 }
 
-let papelUsuarioAtual = null;
+// papelUsuarioAtual agora é o PAPEL funcional dentro do sistema
+// ("proprietario" | "professor" | "aluno") — não confundir com o tipo de
+// licença (perfil.tipo: "admin"/"comprador"), que só controla até quando a
+// conta tem acesso. Contas antigas/sem papel definido caem em "proprietario"
+// para não perder acesso.
+let papelUsuarioAtual = "proprietario";
 let nomePerfilAtual = null;
+let matriculaVinculadaAtual = null;
+
+const TELAS_POR_PAPEL = {
+  proprietario: ["telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaFinanceiro", "telaCobrancas", "telaImportacao", "telaAdmin"],
+  professor: ["telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaCobrancas"],
+  aluno: ["telaMinhaFicha"],
+};
+
+// Mostra/esconde as abas de navegação de acordo com o papel do usuário
+// logado, e garante que a tela ativa seja uma das permitidas para ele.
+function aplicarPermissoesPapel() {
+  const permitidas = TELAS_POR_PAPEL[papelUsuarioAtual] || TELAS_POR_PAPEL.proprietario;
+  document.querySelectorAll(".botao-nav").forEach(btn => {
+    btn.classList.toggle("oculto", !permitidas.includes(btn.dataset.tela));
+  });
+  const botaoAtivo = document.querySelector(".botao-nav.ativo");
+  const telaAtiva = botaoAtivo ? botaoAtivo.dataset.tela : null;
+  if (!telaAtiva || !permitidas.includes(telaAtiva)) {
+    mostrarTela(permitidas[0]);
+  }
+}
 
 async function mostrarApp(usuarioLogado) {
   const acessoLiberado = await verificarPerfilUsuario(usuarioLogado);
@@ -1289,12 +1395,8 @@ async function mostrarApp(usuarioLogado) {
   document.getElementById("appConteudo").classList.remove("oculto");
   document.getElementById("usuarioLogado").textContent = "Logado como " + (usuarioLogado.displayName || usuarioLogado.email);
   document.getElementById("dataHoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
-  document.getElementById("rodapeSistema").classList.toggle("oculto", papelUsuarioAtual !== "admin");
 
-  const podeTrocarLogo = papelUsuarioAtual === "admin" || papelUsuarioAtual === null;
-  document.getElementById("inputLogo").disabled = !podeTrocarLogo;
-  document.getElementById("logoWrap").classList.toggle("logo-wrap-bloqueado", !podeTrocarLogo);
-  document.getElementById("logoWrap").title = podeTrocarLogo ? "Clique para trocar a logo" : "Somente o administrador pode alterar a logo";
+  aplicarPermissoesPapel();
   iniciarListenersFirestore();
 
   const primeiroNome = (nomePerfilAtual || usuarioLogado.displayName || usuarioLogado.email.split("@")[0]).split(" ")[0];
@@ -1303,14 +1405,15 @@ async function mostrarApp(usuarioLogado) {
 
 // Confere o perfil do usuário em "usuarios/{uid}". Contas antigas, criadas
 // direto no Firebase Console antes desse recurso existir, não têm esse
-// documento — nesse caso, são tratadas como administrador (não perdem
+// documento — nesse caso, são tratadas como proprietário (não perdem
 // acesso). Contas do tipo "comprador" com prazo vencido são bloqueadas.
 async function verificarPerfilUsuario(usuarioLogado) {
   try {
     const snap = await getDoc(doc(colUsuarios, usuarioLogado.uid));
     if (!snap.exists()) {
-      papelUsuarioAtual = "admin";
+      papelUsuarioAtual = "proprietario";
       nomePerfilAtual = null;
+      matriculaVinculadaAtual = null;
       return true;
     }
     const perfil = snap.data();
@@ -1322,14 +1425,16 @@ async function verificarPerfilUsuario(usuarioLogado) {
       erroEl.classList.remove("oculto");
       return false;
     }
-    papelUsuarioAtual = perfil.tipo || "admin";
+    papelUsuarioAtual = perfil.papel || "proprietario";
     nomePerfilAtual = perfil.nome || null;
+    matriculaVinculadaAtual = perfil.matriculaVinculada || null;
     return true;
   } catch (e) {
     // sem acesso ao documento de perfil (ex.: regra ainda não publicada) —
-    // não trava o acesso por causa disso, só não libera o rodapé de admin.
-    papelUsuarioAtual = null;
+    // não trava o acesso por causa disso, só libera tudo por padrão.
+    papelUsuarioAtual = "proprietario";
     nomePerfilAtual = null;
+    matriculaVinculadaAtual = null;
     return true;
   }
 }
@@ -1351,16 +1456,27 @@ onAuthStateChanged(auth, (usuario) => {
 
 // Logo institucional: carrega em tempo real na tela de login e no
 // cabeçalho do painel, sempre que alguém trocar (não depende de login).
+// Também guardamos a URL (base64) numa variável global para desenhar no
+// cartão de aniversário sem precisar buscar de novo no Firestore.
+let logoAtualDataUrl = null;
 onSnapshot(docConfig, (snap) => {
   const logoUrl = snap.exists() ? snap.data().logo : null;
-  [document.getElementById("logoLogin"), document.getElementById("logoInstitucional")].forEach(img => {
+  logoAtualDataUrl = logoUrl || null;
+  [document.getElementById("logoLogin"), document.getElementById("logoInstitucional"), document.getElementById("logoAdminPreview")].forEach(img => {
     if (!img) return;
     if (logoUrl) { img.src = logoUrl; img.classList.remove("oculto"); }
     else { img.classList.add("oculto"); }
   });
-  const placeholder = document.getElementById("logoPlaceholder");
-  if (placeholder) placeholder.classList.toggle("oculto", !!logoUrl);
+  [document.getElementById("logoPlaceholder"), document.getElementById("logoAdminPlaceholder")].forEach(placeholder => {
+    if (placeholder) placeholder.classList.toggle("oculto", !!logoUrl);
+  });
 }, () => {}); // se der erro (ex.: sem permissão), simplesmente não mostra logo
+
+// O upload da logo agora só é disparado pelo painel administrativo
+// (botão "Alterar logo"), que aciona o mesmo input de arquivo escondido.
+document.getElementById("btnAlterarLogoAdmin").addEventListener("click", () => {
+  document.getElementById("inputLogo").click();
+});
 
 function comprimirImagemParaLogo(arquivo) {
   return new Promise((resolve, reject) => {
@@ -1452,6 +1568,15 @@ function iniciarListenersFirestore() {
   }, (erro) => {
     mostrarStatus("Erro ao ler presenças do Firestore: " + (erro.code || erro.message), "erro");
   });
+
+  // Lista de usuários do sistema: só é realmente usada no painel
+  // administrativo (papel "proprietario"), mas o listener pode ficar
+  // ativo para qualquer papel sem problema — se faltar permissão de
+  // leitura, o erro é só ignorado (o painel admin nem aparece pra eles).
+  onSnapshot(colUsuarios, (snap) => {
+    usuariosSistema = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (document.getElementById("listaUsuariosAdmin")) renderizarListaUsuariosAdmin();
+  }, () => {});
 }
 
 /* ---------------- financeiro ---------------- */
@@ -2116,6 +2241,136 @@ function mensagemAniversario(aluno) {
   return `Olá, ${aluno.nome.split(" ")[0]}! 🎉 A equipe da academia deseja um feliz aniversário! Que seu novo ano seja repleto de saúde e boas conquistas. Conte com a gente nos seus treinos!`;
 }
 
+/* ---------------- cartão de aniversário (imagem com logo + nome) ----------------
+   wa.me (link de WhatsApp) só manda texto — não existe jeito de anexar uma
+   imagem automaticamente por URL. Por isso o cartão é gerado aqui em canvas
+   e a pessoa baixa ou usa o compartilhamento nativo do celular (que abre o
+   WhatsApp já com a imagem pronta pra enviar, só falta confirmar). */
+
+let alunoCartaoAniversarioAtual = null;
+
+function carregarImagem(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Quebra um texto em várias linhas centralizadas, respeitando uma largura
+// máxima — usado tanto pro nome do aluno (pode ser longo) quanto pra frase.
+function desenharTextoCentralizadoComQuebra(ctx, texto, x, yInicial, larguraMax, alturaLinha) {
+  const palavras = texto.split(" ");
+  let linha = "", y = yInicial;
+  palavras.forEach(palavra => {
+    const linhaTeste = (linha + palavra + " ");
+    if (ctx.measureText(linhaTeste.trim()).width > larguraMax && linha) {
+      ctx.fillText(linha.trim(), x, y);
+      linha = palavra + " ";
+      y += alturaLinha;
+    } else {
+      linha = linhaTeste;
+    }
+  });
+  ctx.fillText(linha.trim(), x, y);
+  return y; // última linha desenhada, pra quem quiser continuar depois
+}
+
+async function desenharCartaoAniversario(aluno) {
+  const canvas = document.getElementById("canvasCartaoAniversario");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#0B0B0C";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = "#D4AF37";
+  ctx.lineWidth = 12;
+  ctx.strokeRect(34, 34, W - 68, H - 68);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(64, 64, W - 128, H - 128);
+
+  let proximoY = 230;
+  if (logoAtualDataUrl) {
+    try {
+      const img = await carregarImagem(logoAtualDataUrl);
+      const tamanho = 190;
+      const escala = Math.min(tamanho / img.width, tamanho / img.height);
+      const w = img.width * escala, h = img.height * escala;
+      ctx.drawImage(img, W / 2 - w / 2, 130, w, h);
+      proximoY = 130 + tamanho + 90;
+    } catch (e) { /* sem logo legível — segue sem ela */ }
+  }
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#D4AF37";
+  ctx.font = "bold 66px Georgia, 'Times New Roman', serif";
+  ctx.fillText("Feliz Aniversário!", W / 2, proximoY);
+
+  ctx.fillStyle = "#F1E9D8";
+  ctx.font = "bold 50px Georgia, 'Times New Roman', serif";
+  const yApósNome = desenharTextoCentralizadoComQuebra(ctx, aluno.nome, W / 2, proximoY + 120, 900, 62);
+
+  ctx.font = "32px Georgia, 'Times New Roman', serif";
+  ctx.fillStyle = "#B8AD95";
+  desenharTextoCentralizadoComQuebra(
+    ctx,
+    "A equipe da academia deseja a você um novo ano de muita saúde, energia e conquistas!",
+    W / 2, yApósNome + 90, 820, 44
+  );
+
+  ctx.font = "28px Georgia, 'Times New Roman', serif";
+  ctx.fillStyle = "#D4AF37";
+  ctx.fillText("Academia Pró", W / 2, H - 100);
+}
+
+async function abrirCartaoAniversario(aluno) {
+  alunoCartaoAniversarioAtual = aluno.id;
+  document.getElementById("tituloCartaoAniversario").textContent = "Cartão de aniversário — " + aluno.nome.split(" ")[0];
+  abrirModal("modalCartaoAniversario");
+  await desenharCartaoAniversario(aluno);
+
+  const podeCompartilharArquivo = !!(navigator.canShare && (() => {
+    try { return navigator.canShare({ files: [new File([], "cartao.png", { type: "image/png" })] }); }
+    catch (e) { return false; }
+  })());
+  document.getElementById("btnCompartilharCartaoAniversario").classList.toggle("oculto", !podeCompartilharArquivo);
+}
+
+document.getElementById("btnBaixarCartaoAniversario").addEventListener("click", () => {
+  const canvas = document.getElementById("canvasCartaoAniversario");
+  const aluno = alunos.find(a => a.id === alunoCartaoAniversarioAtual);
+  const link = document.createElement("a");
+  link.download = `aniversario-${(aluno ? aluno.nome : "aluno").toLowerCase().replace(/\s+/g, "-")}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+  mostrarStatus("Cartão baixado. Agora é só anexar no WhatsApp do aluno.", "ok");
+});
+
+document.getElementById("btnCompartilharCartaoAniversario").addEventListener("click", () => {
+  const canvas = document.getElementById("canvasCartaoAniversario");
+  const aluno = alunos.find(a => a.id === alunoCartaoAniversarioAtual);
+  canvas.toBlob(async (blob) => {
+    try {
+      const arquivo = new File([blob], "cartao-aniversario.png", { type: "image/png" });
+      await navigator.share({
+        files: [arquivo],
+        title: "Feliz aniversário!",
+        text: aluno ? mensagemAniversario(aluno) : "Feliz aniversário!",
+      });
+    } catch (e) { /* usuário cancelou o compartilhamento — sem problema */ }
+  }, "image/png");
+});
+
+document.getElementById("btnEnviarTextoAniversario").addEventListener("click", () => {
+  const aluno = alunos.find(a => a.id === alunoCartaoAniversarioAtual);
+  if (!aluno) return;
+  fecharModal("modalCartaoAniversario");
+  abrirNotificacaoGenerica(aluno.id, "Feliz aniversário — " + aluno.nome.split(" ")[0], mensagemAniversario(aluno));
+});
+
 // Mesma mecânica do "Notificar treino" (abrirLembrete / confirmarEnvioLembrete),
 // mas com título e mensagem definidos por quem chama — reaproveitado aqui
 // para cobrança de mensalidade e para aviso de aniversário.
@@ -2193,16 +2448,16 @@ function renderizarCobrancas() {
     ? aniversariantes.map(({ aluno, dias }) => `
         <div class="linha-turma">
           <span><strong>${aluno.nome}</strong> — ${dias === 0 ? "aniversário é hoje! 🎉" : `aniversário em ${dias} dia(s)`}</span>
-          <button class="botao-notificar" data-notificar-aniversario="${aluno.id}">Notificar</button>
+          <button class="botao-notificar" data-abrir-cartao-aniversario="${aluno.id}">Ver cartão</button>
         </div>
       `).join("")
     : `<p style="font-size:13px;color:var(--ink-soft)">Nenhum aniversário nos próximos dias. Cadastre a data de nascimento dos alunos para ativar esse aviso.</p>`;
 
-  document.getElementById("listaAniversarios").querySelectorAll("[data-notificar-aniversario]").forEach(btn =>
+  document.getElementById("listaAniversarios").querySelectorAll("[data-abrir-cartao-aniversario]").forEach(btn =>
     btn.addEventListener("click", () => {
-      const aluno = alunos.find(a => a.id === Number(btn.dataset.notificarAniversario));
+      const aluno = alunos.find(a => a.id === Number(btn.dataset.abrirCartaoAniversario));
       if (!aluno) return;
-      abrirNotificacaoGenerica(aluno.id, "Feliz aniversário — " + aluno.nome.split(" ")[0], mensagemAniversario(aluno));
+      abrirCartaoAniversario(aluno);
     }));
 
   if (inputDias && !inputDias.dataset.listenerPronto) {
@@ -2235,6 +2490,92 @@ function renderizarTudo() {
   if (document.getElementById("finSaldo")) renderizarFinanceiro();
   if (document.getElementById("listaRecorrentes")) renderizarRecorrentes();
   if (document.getElementById("listaCobrancas")) renderizarCobrancas();
+  if (document.getElementById("fichaAlunoConteudo")) renderizarMinhaFicha();
+}
+
+/* ---------------- papel "aluno": minha ficha (somente leitura) ---------------- */
+
+function renderizarMinhaFicha() {
+  const container = document.getElementById("fichaAlunoConteudo");
+  if (!container) return;
+  const aluno = matriculaVinculadaAtual
+    ? alunos.find(a => String(a.matricula) === String(matriculaVinculadaAtual))
+    : null;
+
+  if (!aluno) {
+    container.innerHTML = `<p style="font-size:13px;color:var(--ink-soft)">Sua conta ainda não está vinculada a uma ficha de aluno. Fale com a administração da academia para vincular sua matrícula.</p>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <p class="prancheta-sub">Matrícula ${aluno.matricula}${aluno.dataMatricula ? " (desde " + formatarDataBR(aluno.dataMatricula) + ")" : ""} · ${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}</p>
+    <div class="prancheta-tags" style="margin:10px 0;">
+      ${aluno.comorbidades.length === 0
+        ? `<span class="selo selo-neutro">Sem comorbidades registradas</span>`
+        : aluno.comorbidades.map(c => `<span class="selo selo-atencao">${c}</span>`).join("")}
+    </div>
+    <p class="prancheta-suplemento"><strong>Suplementação:</strong> ${aluno.suplementacao}</p>
+    <table class="tabela-exercicios">
+      <thead><tr><th>Exercício</th><th>Data</th><th>Status</th></tr></thead>
+      <tbody>
+        ${aluno.exercicios.length ? aluno.exercicios.map(ex => `
+          <tr>
+            <td>${ex.nome}</td>
+            <td class="col-data">${ex.data}</td>
+            <td><span style="display:inline-block;color:${STATUS_INFO[ex.status].cor};background:${STATUS_INFO[ex.status].bg};padding:5px 9px;border-radius:4px;font-size:12.5px;">
+              ${ex.status === "realizado" ? "Realizado" : ex.status === "a realizar" ? "A realizar" : "Pendente"}
+            </span></td>
+          </tr>
+        `).join("") : `<tr><td colspan="3" style="color:var(--ink-soft)">Nenhum exercício registrado ainda.</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+/* ---------------- painel administrativo: usuários do sistema ---------------- */
+
+const PAPEL_INFO = {
+  proprietario: { rotulo: "Proprietário", desc: "Acesso completo ao painel" },
+  professor: { rotulo: "Professor", desc: "Alunos, check-in, sugestão alimentar e cobranças/aniversários" },
+  aluno: { rotulo: "Aluno", desc: "Consulta somente a própria ficha" },
+};
+
+function renderizarListaUsuariosAdmin() {
+  const lista = document.getElementById("listaUsuariosAdmin");
+  if (!lista) return;
+
+  if (!usuariosSistema.length) {
+    lista.innerHTML = `<p style="font-size:13px;color:var(--ink-soft)">Nenhum usuário cadastrado por aqui ainda (contas antigas, criadas direto no Firebase, não aparecem nesta lista, mas continuam com acesso completo).</p>`;
+    return;
+  }
+
+  lista.innerHTML = usuariosSistema.map(u => {
+    const papel = u.papel || "proprietario";
+    const infoPapel = PAPEL_INFO[papel] || PAPEL_INFO.proprietario;
+    const expirado = u.tipo === "comprador" && u.dataExpiracao && u.dataExpiracao < hojeChave();
+    return `
+      <div class="linha-turma" style="flex-wrap:wrap;gap:10px;">
+        <span>
+          <strong>${u.nome || u.email}</strong> — ${u.email}
+          · ${u.tipo === "comprador" ? "Comprador/teste" : "Administrador"}${u.dataExpiracao ? " até " + formatarDataBR(u.dataExpiracao) : ""}${expirado ? " (expirado)" : ""}
+          <br/><span style="color:var(--ink-soft);font-size:12px;">Papel: ${infoPapel.rotulo} — ${infoPapel.desc}${papel === "aluno" && u.matriculaVinculada ? " · matrícula " + u.matriculaVinculada : ""}</span>
+        </span>
+        <select data-alterar-papel="${u.id}" style="max-width:230px;">
+          ${Object.keys(PAPEL_INFO).map(p => `<option value="${p}" ${papel === p ? "selected" : ""}>${PAPEL_INFO[p].rotulo}</option>`).join("")}
+        </select>
+      </div>
+    `;
+  }).join("");
+
+  lista.querySelectorAll("[data-alterar-papel]").forEach(sel =>
+    sel.addEventListener("change", async () => {
+      try {
+        await setDoc(doc(colUsuarios, sel.dataset.alterarPapel), { papel: sel.value }, { merge: true });
+        mostrarStatus("Permissão atualizada. Se for a conta logada agora, a mudança vale a partir do próximo login.", "ok");
+      } catch (e) {
+        mostrarStatus("Não foi possível atualizar a permissão: " + (e.code || e.message), "erro");
+      }
+    }));
 }
 
 function renderizarPendencias() {
@@ -2304,7 +2645,7 @@ function renderizarAlunos() {
         <div class="avatar">${iniciais(aluno.nome)}</div>
         <div class="prancheta-titulo">
           <h3>${aluno.nome} ${aluno.inadimplente ? '<span class="selo-inadimplente">Inadimplente — check-in bloqueado</span>' : ""}</h3>
-          <p class="prancheta-sub">Matrícula ${aluno.matricula || "—"} · ${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}${aluno.ultimoLembrete ? " · último lembrete: " + aluno.ultimoLembrete : ""}</p>
+          <p class="prancheta-sub">Matrícula ${aluno.matricula || "—"}${aluno.dataMatricula ? " (desde " + formatarDataBR(aluno.dataMatricula) + ")" : ""} · ${aluno.idade} anos · ${aluno.faixaEtaria} · prof. ${aluno.professor}${aluno.ultimoLembrete ? " · último lembrete: " + aluno.ultimoLembrete : ""}</p>
         </div>
         <button class="botao-lembrete" data-abrir-lembrete="${aluno.id}">Notificar treino</button>
         <button class="botao-whatsapp" data-whatsapp="${aluno.id}">WhatsApp</button>
@@ -2455,7 +2796,7 @@ document.getElementById("formIdade").addEventListener("input", (e) => {
 });
 
 function limparFormularioCadastro() {
-  ["formNome", "formMatricula", "formIdade", "formProfessor", "formTelefone", "formDataNascimento", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
+  ["formNome", "formMatricula", "formIdade", "formDataMatricula", "formProfessor", "formTelefone", "formDataNascimento", "formComorbidades", "formSuplementacao"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("formFaixaCalculada").value = "—";
   document.getElementById("erroCadastro").classList.add("oculto");
 }
@@ -2464,6 +2805,7 @@ function abrirCadastroNovoAluno() {
   alunoEditandoId = null;
   limparFormularioCadastro();
   document.getElementById("formMatricula").value = gerarMatriculaUnica();
+  document.getElementById("formDataMatricula").value = hojeChave();
   document.getElementById("tituloModalCadastro").textContent = "Cadastrar novo aluno";
   document.getElementById("btnSalvarCadastro").textContent = "Cadastrar aluno";
   abrirModal("modalCadastro");
@@ -2479,6 +2821,7 @@ function abrirEdicaoAluno(alunoId) {
   document.getElementById("formNome").value = aluno.nome;
   document.getElementById("formMatricula").value = aluno.matricula || gerarMatriculaUnica();
   document.getElementById("formIdade").value = aluno.idade;
+  document.getElementById("formDataMatricula").value = aluno.dataMatricula || "";
   document.getElementById("formFaixaCalculada").value = aluno.faixaEtaria;
   document.getElementById("formProfessor").value = aluno.professor;
   document.getElementById("formTelefone").value = aluno.telefone || "";
@@ -2515,6 +2858,7 @@ document.getElementById("btnSalvarCadastro").addEventListener("click", () => {
     matricula,
     idade: Number(idade),
     faixaEtaria: calcularFaixaEtaria(idade),
+    dataMatricula: document.getElementById("formDataMatricula").value || null,
     professor: document.getElementById("formProfessor").value.trim() || "A definir",
     telefone: document.getElementById("formTelefone").value.replace(/\D/g, ""),
     dataNascimento: document.getElementById("formDataNascimento").value || null,
@@ -2731,6 +3075,7 @@ const CAMPOS_ALUNO_IMPORTACAO = [
   { chave: "idade", rotulo: "Idade", sinonimos: ["idade", "anos"] },
   { chave: "telefone", rotulo: "WhatsApp / telefone", sinonimos: ["telefone", "celular", "whatsapp", "fone", "contato", "numero", "numero de contato"] },
   { chave: "dataNascimento", rotulo: "Data de nascimento", sinonimos: ["nascimento", "data de nascimento", "aniversario", "dt nascimento", "nasc", "data nasc"] },
+  { chave: "dataMatricula", rotulo: "Data da matrícula", sinonimos: ["data da matricula", "data matricula", "data de cadastro", "data de entrada", "dt matricula", "matriculado em"] },
   { chave: "professor", rotulo: "Professor", sinonimos: ["professor", "instrutor", "personal"] },
   { chave: "comorbidades", rotulo: "Comorbidades", sinonimos: ["comorbidade", "comorbidades", "condicao", "condicao de saude", "saude", "observacoes"] },
   { chave: "suplementacao", rotulo: "Suplementação", sinonimos: ["suplementacao", "suplemento"] },
@@ -2938,6 +3283,7 @@ function montarRegistrosImportacao() {
         nome,
         telefone: normalizarTelefoneImportado(valorMapeadoImportacao(linha, "telefone")),
         dataNascimento: dataNascimento || null,
+        dataMatricula: normalizarDataImportada(valorMapeadoImportacao(linha, "dataMatricula")) || null,
         idade,
         matriculaBruta: String(valorMapeadoImportacao(linha, "matricula")).trim(),
         professor: String(valorMapeadoImportacao(linha, "professor")).trim() || "A definir",
@@ -3130,6 +3476,7 @@ document.getElementById("btnConfirmarImportacao").addEventListener("click", () =
         professor: r.professor,
         telefone: r.telefone || (existente ? existente.telefone : ""),
         dataNascimento: r.dataNascimento || (existente ? existente.dataNascimento : null),
+        dataMatricula: r.dataMatricula || (existente ? existente.dataMatricula : null),
         comorbidades: r.comorbidades.length ? r.comorbidades : (existente ? existente.comorbidades : []),
         suplementacao: r.suplementacao,
       };
@@ -3226,6 +3573,9 @@ document.getElementById("btnAbrirCadastroUsuario").addEventListener("click", () 
   document.getElementById("usrTipo").value = "admin";
   document.getElementById("usrDiasTeste").value = "7";
   document.getElementById("usrPrazoWrap").classList.add("oculto");
+  document.getElementById("usrPapel").value = "proprietario";
+  document.getElementById("usrMatriculaVinculada").value = "";
+  document.getElementById("usrMatriculaWrap").classList.add("oculto");
   document.getElementById("erroUsuario").classList.add("oculto");
   abrirModal("modalUsuario");
 });
@@ -3234,11 +3584,17 @@ document.getElementById("usrTipo").addEventListener("change", (e) => {
   document.getElementById("usrPrazoWrap").classList.toggle("oculto", e.target.value !== "comprador");
 });
 
+document.getElementById("usrPapel").addEventListener("change", (e) => {
+  document.getElementById("usrMatriculaWrap").classList.toggle("oculto", e.target.value !== "aluno");
+});
+
 document.getElementById("btnSalvarUsuario").addEventListener("click", async () => {
   const nome = document.getElementById("usrNome").value.trim();
   const email = document.getElementById("usrEmail").value.trim();
   const senha = document.getElementById("usrSenha").value;
   const tipo = document.getElementById("usrTipo").value;
+  const papel = document.getElementById("usrPapel").value;
+  const matriculaVinculada = document.getElementById("usrMatriculaVinculada").value.trim();
   const erroEl = document.getElementById("erroUsuario");
   const btn = document.getElementById("btnSalvarUsuario");
 
@@ -3246,6 +3602,19 @@ document.getElementById("btnSalvarUsuario").addEventListener("click", async () =
     erroEl.textContent = "Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.";
     erroEl.classList.remove("oculto");
     return;
+  }
+
+  if (papel === "aluno") {
+    if (!matriculaVinculada) {
+      erroEl.textContent = "Informe a matrícula do aluno para vincular essa conta.";
+      erroEl.classList.remove("oculto");
+      return;
+    }
+    if (!alunos.some(a => String(a.matricula) === matriculaVinculada)) {
+      erroEl.textContent = "Não encontramos nenhum aluno cadastrado com essa matrícula.";
+      erroEl.classList.remove("oculto");
+      return;
+    }
   }
 
   let dataExpiracao = null;
@@ -3263,17 +3632,13 @@ document.getElementById("btnSalvarUsuario").addEventListener("click", async () =
   try {
     const credencial = await createUserWithEmailAndPassword(authSecundario, email, senha);
     await setDoc(doc(colUsuarios, credencial.user.uid), {
-      nome, email, tipo, dataExpiracao,
+      nome, email, tipo, dataExpiracao, papel,
+      matriculaVinculada: papel === "aluno" ? matriculaVinculada : null,
       criadoEm: hojeChave(),
       criadoPor: auth.currentUser ? auth.currentUser.email : "desconhecido",
     });
     await signOut(authSecundario); // encerra a sessão da conta nova no app secundário
-    mostrarStatus(
-      tipo === "admin"
-        ? `Administrador ${nome} cadastrado com sucesso.`
-        : `Acesso de teste para ${nome} cadastrado até ${formatarDataBR(dataExpiracao)}.`,
-      "ok"
-    );
+    mostrarStatus(`${nome} cadastrado(a) como ${PAPEL_INFO[papel].rotulo}.`, "ok");
     fecharModal("modalUsuario");
   } catch (e) {
     erroEl.textContent = "Não foi possível cadastrar: " + (e.code === "auth/email-already-in-use" ? "esse e-mail já está em uso." : (e.code || e.message));
