@@ -244,6 +244,29 @@
   .botao-nav.ativo { background: var(--primary); color: #14120C; border-color: var(--primary); }
   .tela.oculto { display: none; }
 
+  /* --------- tela inicial: boas-vindas grande + menu de botões grandes --------- */
+  .boas-vindas-inicio {
+    max-width: 1080px; margin: 6px auto 2px; font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(32px, 5vw, 52px); color: var(--primary); line-height: 1.1;
+  }
+  .boas-vindas-inicio-sub { max-width: 1080px; margin: 0 auto 28px; color: var(--ink-soft); font-size: 15px; }
+  .grade-menu-inicio {
+    max-width: 1080px; margin: 0 auto; display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px;
+  }
+  .cartao-menu-inicio {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    padding: 28px 24px; background: var(--surface); border: 1px solid var(--paper-line);
+    border-radius: 12px; cursor: pointer; text-align: left; font: inherit; color: var(--ink);
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .cartao-menu-inicio:hover, .cartao-menu-inicio:focus-visible {
+    transform: translateY(-4px); border-color: var(--primary); background: var(--paper); outline: none;
+  }
+  .cartao-menu-inicio .icone-menu-inicio { font-size: 36px; line-height: 1; }
+  .cartao-menu-inicio h3 { font-family: Georgia, "Times New Roman", serif; font-size: 19px; margin: 0; color: var(--primary); }
+  .cartao-menu-inicio p { margin: 0; font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+
   /* --------- cardápio --------- */
   .aviso-cardapio { max-width: 1080px; margin: 0 auto 18px; font-size: 13px; color: var(--ink-soft); background: var(--amber-bg); border-color: rgba(232,185,77,0.35); }
   .nav-cardapio { max-width: 1080px; margin: 0 auto 18px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -407,7 +430,8 @@
   <div id="faixaStatus" class="faixa-status oculto"></div>
 
   <nav class="nav-telas">
-    <button class="botao-nav ativo" data-tela="telaPainel">Painel (pendências)</button>
+    <button class="botao-nav ativo" data-tela="telaInicio">Início</button>
+    <button class="botao-nav" data-tela="telaPainel">Painel (pendências)</button>
     <button class="botao-nav" data-tela="telaAlunos">Alunos</button>
     <button class="botao-nav" data-tela="telaCardapio">Sugestão alimentar</button>
     <button class="botao-nav" data-tela="telaCheckin">Check-in</button>
@@ -418,8 +442,15 @@
     <button class="botao-nav oculto" data-tela="telaMinhaFicha" id="navBotaoMinhaFicha">Minha Ficha</button>
   </nav>
 
+  <!-- ===================== TELA: INÍCIO (boas-vindas + menu grande) ===================== -->
+  <div class="tela" id="telaInicio">
+    <h1 class="boas-vindas-inicio" id="boasVindasInicio">Bem-vindo(a)!</h1>
+    <p class="boas-vindas-inicio-sub" id="boasVindasInicioSub">Escolha para onde ir.</p>
+    <div class="grade-menu-inicio" id="grademenuInicio"></div>
+  </div>
+
   <!-- ===================== TELA: PAINEL (só pendências) ===================== -->
-  <div class="tela" id="telaPainel">
+  <div class="tela oculto" id="telaPainel">
     <div class="cartao cartao-pendencias">
       <h2>Central de pendências</h2>
       <div class="resumo-total">
@@ -1368,18 +1399,53 @@ let nomePerfilAtual = null;
 let matriculaVinculadaAtual = null;
 
 const TELAS_POR_PAPEL = {
-  proprietario: ["telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaFinanceiro", "telaCobrancas", "telaImportacao", "telaAdmin"],
-  professor: ["telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaCobrancas"],
-  aluno: ["telaMinhaFicha"],
+  proprietario: ["telaInicio", "telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaFinanceiro", "telaCobrancas", "telaImportacao", "telaAdmin"],
+  professor: ["telaInicio", "telaPainel", "telaAlunos", "telaCardapio", "telaCheckin", "telaCobrancas"],
+  aluno: ["telaInicio", "telaMinhaFicha"],
 };
 
+// Itens do menu grande da tela inicial — mesma lista de destinos do menu de
+// navegação do topo, só que com ícone e descrição, pra virar botão grande.
+// "telaInicio" nunca entra aqui (ela É a tela inicial).
+const ITENS_MENU_INICIO = [
+  { tela: "telaPainel", icone: "📋", titulo: "Painel (pendências)", desc: "Exercícios pendentes de hoje" },
+  { tela: "telaAlunos", icone: "🧑‍🤝‍🧑", titulo: "Alunos", desc: "Fichas, treinos e cadastro" },
+  { tela: "telaCardapio", icone: "🥗", titulo: "Sugestão alimentar", desc: "Orientação nutricional por perfil" },
+  { tela: "telaCheckin", icone: "📲", titulo: "Check-in", desc: "QR Code geral e recepção" },
+  { tela: "telaFinanceiro", icone: "💰", titulo: "Financeiro", desc: "Fluxo de caixa, contas e relatórios" },
+  { tela: "telaCobrancas", icone: "🎉", titulo: "Cobranças e Aniversários", desc: "Avisos de vencimento e aniversariantes" },
+  { tela: "telaImportacao", icone: "📥", titulo: "Importar dados", desc: "Planilhas e PDF de alunos ou financeiro" },
+  { tela: "telaAdmin", icone: "⚙️", titulo: "Administração", desc: "Usuários do sistema e logo da academia" },
+  { tela: "telaMinhaFicha", icone: "🗂️", titulo: "Minha Ficha", desc: "Seus dados e seus treinos" },
+];
+
+// Monta o menu de botões grandes da tela inicial, só com os destinos que o
+// papel atual pode acessar (mesma lista usada para liberar o menu do topo).
+function renderizarMenuInicio() {
+  const grade = document.getElementById("grademenuInicio");
+  if (!grade) return;
+  const permitidas = TELAS_POR_PAPEL[papelUsuarioAtual] || TELAS_POR_PAPEL.proprietario;
+  const itens = ITENS_MENU_INICIO.filter(item => permitidas.includes(item.tela));
+  grade.innerHTML = itens.map(item => `
+    <button class="cartao-menu-inicio" data-ir-para-tela="${item.tela}">
+      <span class="icone-menu-inicio">${item.icone}</span>
+      <h3>${item.titulo}</h3>
+      <p>${item.desc}</p>
+    </button>
+  `).join("");
+  grade.querySelectorAll("[data-ir-para-tela]").forEach(btn =>
+    btn.addEventListener("click", () => mostrarTela(btn.dataset.irParaTela)));
+}
+
 // Mostra/esconde as abas de navegação de acordo com o papel do usuário
-// logado, e garante que a tela ativa seja uma das permitidas para ele.
+// logado, monta o menu grande da tela inicial, e garante que a tela ativa
+// seja uma das permitidas para ele.
 function aplicarPermissoesPapel() {
   const permitidas = TELAS_POR_PAPEL[papelUsuarioAtual] || TELAS_POR_PAPEL.proprietario;
   document.querySelectorAll(".botao-nav").forEach(btn => {
     btn.classList.toggle("oculto", !permitidas.includes(btn.dataset.tela));
   });
+  renderizarMenuInicio();
   const botaoAtivo = document.querySelector(".botao-nav.ativo");
   const telaAtiva = botaoAtivo ? botaoAtivo.dataset.tela : null;
   if (!telaAtiva || !permitidas.includes(telaAtiva)) {
@@ -1396,11 +1462,14 @@ async function mostrarApp(usuarioLogado) {
   document.getElementById("usuarioLogado").textContent = "Logado como " + (usuarioLogado.displayName || usuarioLogado.email);
   document.getElementById("dataHoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
 
+  const primeiroNome = (nomePerfilAtual || usuarioLogado.displayName || usuarioLogado.email.split("@")[0]).split(" ")[0];
+  // Boas-vindas grande e fixa na tela inicial (não é um aviso que some —
+  // fica lá sempre que a pessoa voltar pra essa tela).
+  document.getElementById("boasVindasInicio").textContent = `Bem-vindo(a), ${primeiroNome}!`;
+  document.getElementById("boasVindasInicioSub").textContent = "Escolha para onde ir:";
+
   aplicarPermissoesPapel();
   iniciarListenersFirestore();
-
-  const primeiroNome = (nomePerfilAtual || usuarioLogado.displayName || usuarioLogado.email.split("@")[0]).split(" ")[0];
-  mostrarStatus(`Bem-vindo(a), ${primeiroNome}!`, "ok");
 }
 
 // Confere o perfil do usuário em "usuarios/{uid}". Contas antigas, criadas
