@@ -373,7 +373,7 @@
   <div class="tela-login" id="telaLogin">
     <div class="cartao-login">
       <img id="logoLogin" class="oculto logo-login" alt="Logo da academia" />
-      <h1>Academia Pró</h1>
+      <h1 id="tituloLogin">Academia Pró</h1>
       <p class="legenda-login">Acesso restrito à equipe de professores</p>
       <div class="campo-form">
         <label>E-mail</label>
@@ -413,7 +413,7 @@
       </div>
       <input type="file" id="inputLogo" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml,image/bmp,image/*" style="display:none" />
       <div>
-        <h1>Academia Pró — Painel do Professor</h1>
+        <h1 id="tituloApp">Academia Pró — Painel do Professor</h1>
         <p>Acompanhamento de treinos, fichas de alunos e lembretes</p>
       </div>
     </div>
@@ -736,9 +736,16 @@
     </div>
 
     <div class="cartao cartao-financeiro">
-      <h2>Logo da academia</h2>
-      <p class="painel-legenda" style="margin-top:-6px">Aparece na tela de login e no cabeçalho do sistema.</p>
-      <div style="display:flex;align-items:center;gap:16px;">
+      <h2>Identidade da academia</h2>
+      <p class="painel-legenda" style="margin-top:-6px">Nome e logo aparecem na tela de login, no cabeçalho do sistema, na aba de check-in público e nos cartões de aniversário. Cada cliente que usar este sistema configura os seus próprios, sem afetar os demais (cada um tem seu próprio projeto/banco de dados).</p>
+      <div class="campo-form-linha" style="align-items:flex-end;">
+        <div class="campo-form" style="margin-bottom:0;">
+          <label>Nome da academia</label>
+          <input id="inputNomeAcademia" placeholder="Ex: Academia Pró" />
+        </div>
+        <button class="botao-primario" id="btnSalvarNomeAcademia" style="margin-bottom:12px;">Salvar nome</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:10px;">
         <div class="logo-wrap" id="logoWrapAdmin" style="pointer-events:none;">
           <img id="logoAdminPreview" class="oculto" alt="Logo da academia" />
           <span id="logoAdminPlaceholder" class="logo-placeholder">Sem logo</span>
@@ -1514,14 +1521,42 @@ onAuthStateChanged(auth, (usuario) => {
   else mostrarTelaLogin();
 });
 
-// Logo institucional: carrega em tempo real na tela de login e no
-// cabeçalho do painel, sempre que alguém trocar (não depende de login).
-// Também guardamos a URL (base64) numa variável global para desenhar no
-// cartão de aniversário sem precisar buscar de novo no Firestore.
+// Identidade da academia (nome + logo): carrega em tempo real na tela de
+// login, no cabeçalho, no check-in público e no cartão de aniversário,
+// sempre que alguém trocar (não depende de login). Cada cliente que usar
+// este sistema tem o seu próprio projeto/banco Firebase, então o nome e a
+// logo configurados aqui nunca aparecem pra outro cliente.
 let logoAtualDataUrl = null;
+let nomeAcademiaAtual = "Academia Pró";
+let checkinTituloInicialDefinido = false;
+
+function aplicarNomeAcademiaNaInterface() {
+  document.title = `${nomeAcademiaAtual} — Painel do Professor`;
+  const tituloLogin = document.getElementById("tituloLogin");
+  if (tituloLogin) tituloLogin.textContent = nomeAcademiaAtual;
+  const tituloApp = document.getElementById("tituloApp");
+  if (tituloApp) tituloApp.textContent = `${nomeAcademiaAtual} — Painel do Professor`;
+  const inputNomeAcademia = document.getElementById("inputNomeAcademia");
+  if (inputNomeAcademia && document.activeElement !== inputNomeAcademia) inputNomeAcademia.value = nomeAcademiaAtual;
+  // o título do check-in público só é definido pelo nome da academia uma vez,
+  // no carregamento — depois disso, as mensagens de status do próprio
+  // check-in (ex.: "Presença registrada!") assumem esse lugar.
+  if (!checkinTituloInicialDefinido) {
+    const checkinTitulo = document.getElementById("checkinTitulo");
+    if (checkinTitulo) {
+      checkinTitulo.textContent = `Check-in ${nomeAcademiaAtual}`;
+      checkinTituloInicialDefinido = true;
+    }
+  }
+}
+
 onSnapshot(docConfig, (snap) => {
-  const logoUrl = snap.exists() ? snap.data().logo : null;
-  logoAtualDataUrl = logoUrl || null;
+  const dados = snap.exists() ? snap.data() : {};
+  const logoUrl = dados.logo || null;
+  logoAtualDataUrl = logoUrl;
+  nomeAcademiaAtual = dados.nomeAcademia || "Academia Pró";
+  aplicarNomeAcademiaNaInterface();
+
   [document.getElementById("logoLogin"), document.getElementById("logoInstitucional"), document.getElementById("logoAdminPreview")].forEach(img => {
     if (!img) return;
     if (logoUrl) { img.src = logoUrl; img.classList.remove("oculto"); }
@@ -1530,7 +1565,21 @@ onSnapshot(docConfig, (snap) => {
   [document.getElementById("logoPlaceholder"), document.getElementById("logoAdminPlaceholder")].forEach(placeholder => {
     if (placeholder) placeholder.classList.toggle("oculto", !!logoUrl);
   });
-}, () => {}); // se der erro (ex.: sem permissão), simplesmente não mostra logo
+}, () => {}); // se der erro (ex.: sem permissão), simplesmente não mostra logo/nome
+
+document.getElementById("btnSalvarNomeAcademia").addEventListener("click", async () => {
+  const nome = document.getElementById("inputNomeAcademia").value.trim();
+  if (!nome) {
+    mostrarStatus("Informe o nome da academia antes de salvar.", "erro");
+    return;
+  }
+  try {
+    await setDoc(docConfig, { nomeAcademia: nome }, { merge: true });
+    mostrarStatus("Nome da academia atualizado.", "ok");
+  } catch (err) {
+    mostrarStatus("Não foi possível salvar o nome: " + (err.code || err.message), "erro");
+  }
+});
 
 // O upload da logo agora só é disparado pelo painel administrativo
 // (botão "Alterar logo"), que aciona o mesmo input de arquivo escondido.
@@ -2383,7 +2432,7 @@ async function desenharCartaoAniversario(aluno) {
 
   ctx.font = "28px Georgia, 'Times New Roman', serif";
   ctx.fillStyle = "#D4AF37";
-  ctx.fillText("Academia Pró", W / 2, H - 100);
+  ctx.fillText(nomeAcademiaAtual, W / 2, H - 100);
 }
 
 async function abrirCartaoAniversario(aluno) {
